@@ -4,8 +4,8 @@ import AeneasMeta.Simp
 import Std.Do
 import Aeneas.Tactic.Solver.Grind.Init
 import Aeneas.Std.Spec
-import Aeneas.Tactic.Step.DspecInduction
 import Aeneas.Tactic.Step.Intro
+import Aeneas.Tactic.Step.DspecInduction
 import Aeneas.Data.Coinductive.ITree
 import Aeneas.Data.Coinductive.Effect
 import Aeneas.Data.Coinductive.Spec
@@ -739,7 +739,6 @@ theorem Result.of_wp {α : Type u} {x : Result α} (P : Result α → Prop) :
       have : heq = PEmpty.elim := by funext; contradiction
       simp [*] at *
       try trivial
-      try (all_goals simp at hspec)
 
 
 /-- Lift an Aeneas step spec to an mvcgen-compatible `Triple`. -/
