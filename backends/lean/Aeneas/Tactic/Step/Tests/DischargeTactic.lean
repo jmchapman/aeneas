@@ -56,8 +56,6 @@ elab "discharge_markers" : tactic => do
     mk_spec_bind := ``triple_step_bind
     mk_spec_bind_skip_args := 6
     discharge_tactic := some `discharge_markers
-    qimp_elim_tactics := #[``Post.entails_iff, ``true_imp_iff]
-    uncurry_elim_tactics := #[]
     to_mvcgen := none
     liftings := #[]
   }
