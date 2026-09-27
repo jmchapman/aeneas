@@ -92,9 +92,13 @@ def core.slice.iter.IteratorSliceIter.next_back
 theorem core.slice.iter.IteratorSliceIter.next_back.spec
     {T : Type} (it : core.slice.iter.Iter T) (h : it.i < it.slice.val.length) :
     core.slice.iter.IteratorSliceIter.next_back it
-    ⦃ r => r.2.slice.val = it.slice.val.take (it.slice.val.length - 1) ∧ r.2.i = it.i ⦄ := by
+    ⦃ r => r.1 = it.slice.val.getLast? ∧
+           r.2.slice.val = it.slice.val.take (it.slice.val.length - 1) ∧
+           r.2.i = it.i ⦄ := by
   unfold core.slice.iter.IteratorSliceIter.next_back
-  simp [h, WP.spec_ok]
+  simp [h, WP.spec_ok, List.getLast?_eq_getElem?]
+  rw [List.getElem?_eq_getElem (by scalar_tac), Slice.getElem_Nat_eq]
+  scalar_tac
 
 /-- `Iterator::count` on `slice::Iter`: Rust specialises this to the number of elements
     remaining, rather than draining the iterator. -/
