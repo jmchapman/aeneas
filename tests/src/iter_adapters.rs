@@ -351,20 +351,23 @@ pub fn test_range_inclusive_empty() {
 }
 
 // ============================================================================
-// TakeWhile
+// Count
 // ============================================================================
 
-// Not `#[verify::test]`: a closure predicate is noncomputable, and a named `fn` one
-// aborts under `-checks` (TypesAnalysis.ml:968).
-
-pub fn take_while_lt_ten(v: &[u32]) -> Option<u32> {
-    let mut it = v.iter().take_while(|x| **x < 10);
-    it.next().copied()
+/// `count` on a slice iterator: Rust specialises this to the number remaining.
+#[verify::test]
+pub fn test_count_slice() {
+    let v: [u32; 3] = [1, 2, 3];
+    assert!(v.iter().count() == 3);
 }
 
-pub fn take_while_twice(v: &[u32]) -> (Option<u32>, Option<u32>) {
-    let mut it = v.iter().take_while(|x| **x < 10);
-    let a = it.next().copied();
-    let b = it.next().copied();
-    (a, b)
+#[verify::test]
+pub fn test_count_empty_slice() {
+    let v: [u32; 0] = [];
+    assert!(v.iter().count() == 0);
+}
+
+/// `count` through an adapter goes via `Iterator::count`'s default body.
+pub fn count_after_take(v: &[u32]) -> usize {
+    v.iter().take(2).count()
 }

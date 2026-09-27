@@ -73,6 +73,22 @@ def core.slice.iter.IteratorSliceIter.next
     ok (some x, it)
   else ok (none, it)
 
+/-- `Iterator::count` on `slice::Iter`: Rust specialises this to the number of elements
+    remaining, rather than draining the iterator. -/
+@[rust_fun
+  "core::slice::iter::{core::iter::traits::iterator::Iterator<core::slice::iter::Iter<'a, @T>, &'a @T>}::count"]
+def core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.count
+  {T : Type} (it : core.slice.iter.Iter T) : Result Std.Usize :=
+  ok (Std.Usize.ofNatCore (it.slice.val.length - it.i) (by scalar_tac))
+
+@[step]
+theorem core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.count.spec
+    {T : Type} (it : core.slice.iter.Iter T) :
+    core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.count it
+    ⦃ n => n.val = it.slice.val.length - it.i ⦄ := by
+  unfold core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.count
+  simp [WP.spec_ok]
+
 @[reducible, rust_trait_impl
   "core::iter::traits::iterator::Iterator<core::slice::iter::Iter<'a, @T>, &'a @T>"]
 impl_def core.iter.traits.iterator.IteratorSliceIter (T : Type) :
