@@ -349,3 +349,25 @@ pub fn test_range_inclusive_empty() {
     let mut it = 5usize..=3usize;
     assert!(it.next().is_none());
 }
+
+// ============================================================================
+// Count
+// ============================================================================
+
+/// `count` on a slice iterator: Rust specialises this to the number remaining.
+#[verify::test]
+pub fn test_count_slice() {
+    let v: [u32; 3] = [1, 2, 3];
+    assert!(v.iter().count() == 3);
+}
+
+#[verify::test]
+pub fn test_count_empty_slice() {
+    let v: [u32; 0] = [];
+    assert!(v.iter().count() == 0);
+}
+
+/// `count` through an adapter goes via `Iterator::count`'s default body.
+pub fn count_after_take(v: &[u32]) -> usize {
+    v.iter().take(2).count()
+}

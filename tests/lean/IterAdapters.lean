@@ -17,7 +17,43 @@ set_option maxHeartbeats 1000000
 /- You can set the `maxRecDepth` value with the `-max-recdepth` CLI option -/
 set_option maxRecDepth 2048
 
+/- You can remove the following line by using the CLI option `-all-computable`: -/
+noncomputable section
+
 namespace iter_adapters
+
+/-- [core::iter::adapters::enumerate::{impl core::iter::traits::iterator::Iterator<(usize, Clause0_Item)> for core::iter::adapters::enumerate::Enumerate<I>}::count]:
+    Source: '/rustc/library/core/src/iter/adapters/enumerate.rs', lines 101:4-101:27
+    Name pattern: [core::iter::adapters::enumerate::{core::iter::traits::iterator::Iterator<core::iter::adapters::enumerate::Enumerate<@I>, (usize, @Clause0_Item)>}::count]
+    Visibility: public -/
+@[rust_fun
+  "core::iter::adapters::enumerate::{core::iter::traits::iterator::Iterator<core::iter::adapters::enumerate::Enumerate<@I>, (usize, @Clause0_Item)>}::count"]
+axiom
+  core.iter.adapters.enumerate.Enumerate.Insts.CoreIterTraitsIteratorIteratorPairUsizeClause0_Item.count
+  {I : Type} {Clause0_Item : Type} (traitsiteratorIteratorInst :
+  core.iter.traits.iterator.Iterator I Clause0_Item) :
+  core.iter.adapters.enumerate.Enumerate I → Result Std.Usize
+
+/-- [core::iter::adapters::take::{impl core::iter::traits::iterator::Iterator<Clause0_Item> for core::iter::adapters::take::Take<I>}::count]:
+    Source: '/rustc/library/core/src/iter/adapters/take.rs', lines 60:4-60:31
+    Name pattern: [core::iter::adapters::take::{core::iter::traits::iterator::Iterator<core::iter::adapters::take::Take<@I>, @Clause0_Item>}::count]
+    Visibility: public -/
+@[rust_fun
+  "core::iter::adapters::take::{core::iter::traits::iterator::Iterator<core::iter::adapters::take::Take<@I>, @Clause0_Item>}::count"]
+axiom core.iter.adapters.take.Take.Insts.CoreIterTraitsIteratorIterator.count
+  {I : Type} {Clause0_Item : Type} (traitsiteratorIteratorInst :
+  core.iter.traits.iterator.Iterator I Clause0_Item) :
+  core.iter.adapters.take.Take I → Result Std.Usize
+
+/-- [core::iter::range::{impl core::iter::traits::iterator::Iterator<A> for core::ops::range::Range<A>}::count]:
+    Source: '/rustc/library/core/src/iter/range.rs', lines 1202:4-1202:27
+    Name pattern: [core::iter::range::{core::iter::traits::iterator::Iterator<core::ops::range::Range<@A>, @A>}::count]
+    Visibility: public -/
+@[rust_fun
+  "core::iter::range::{core::iter::traits::iterator::Iterator<core::ops::range::Range<@A>, @A>}::count"]
+axiom core.ops.range.Range.Insts.CoreIterTraitsIteratorIterator.count
+  {A : Type} (StepInst : core.iter.range.Step A) :
+  core.ops.range.Range A → Result Std.Usize
 
 /-- [iter_adapters::test_enumerate_slice]:
     Source: 'tests/src/iter_adapters.rs', lines 14:0-24:1
@@ -890,5 +926,42 @@ def test_range_inclusive_empty : Result Unit := do
 
 /- Unit test for [iter_adapters::test_range_inclusive_empty] -/
 #assert (test_range_inclusive_empty).reducesTo ()
+
+/-- [iter_adapters::test_count_slice]:
+    Source: 'tests/src/iter_adapters.rs', lines 359:0-362:1
+    Visibility: public -/
+def test_count_slice : Result Unit := do
+  let s ← lift (Array.to_slice (Array.make 3#usize [ 1#u32, 2#u32, 3#u32 ]))
+  let i ← core.slice.Slice.iter s
+  let i1 ←
+    core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.count i
+  massert (i1 = 3#usize)
+
+/- Unit test for [iter_adapters::test_count_slice] -/
+#assert (test_count_slice).reducesTo ()
+
+/-- [iter_adapters::test_count_empty_slice]:
+    Source: 'tests/src/iter_adapters.rs', lines 365:0-368:1
+    Visibility: public -/
+def test_count_empty_slice : Result Unit := do
+  let s ← lift (Array.to_slice (Std.Array.empty Std.U32))
+  let i ← core.slice.Slice.iter s
+  let i1 ←
+    core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.count i
+  massert (i1 = 0#usize)
+
+/- Unit test for [iter_adapters::test_count_empty_slice] -/
+#assert (test_count_empty_slice).reducesTo ()
+
+/-- [iter_adapters::count_after_take]:
+    Source: 'tests/src/iter_adapters.rs', lines 371:0-373:1
+    Visibility: public -/
+def count_after_take (v : Slice Std.U32) : Result Std.Usize := do
+  let i ← core.slice.Slice.iter v
+  let t ←
+    core.iter.traits.iterator.Iterator.take.trait_default
+      (core.iter.traits.iterator.IteratorSliceIter Std.U32) i 2#usize
+  core.iter.adapters.take.Take.Insts.CoreIterTraitsIteratorIterator.count
+    (core.iter.traits.iterator.IteratorSliceIter Std.U32) t
 
 end iter_adapters

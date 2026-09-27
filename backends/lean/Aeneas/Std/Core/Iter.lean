@@ -709,6 +709,60 @@ def core.iter.traits.iterator.Iterator.zip.trait_default
   Self → U → Result (core.iter.adapters.zip.Zip Self IntoIter) :=
   core.iter.traits.iterator.Iterator.zip.default IntoIterInst.into_iter
 
+/-- `Iterator::count` default body: drain the iterator, counting the elements.
+
+    Defined by `partial_fixpoint` because there is no decreasing measure on a general
+    `Self` — as in Rust, `count` need not terminate; on an infinite iterator the value
+    is `Result.div`. -/
+def core.iter.traits.iterator.Iterator.count.default
+  {Self Item : Type}
+  (IterInst : core.iter.traits.iterator.Iterator Self Item) :
+  Self → Result Std.Usize :=
+  fun self => do
+    let (o, self1) ← IterInst.next self
+    match o with
+    | none => ok 0#usize
+    | some _ => do
+      let n ← core.iter.traits.iterator.Iterator.count.default IterInst self1
+      n + 1#usize
+partial_fixpoint
+
+/-- An exhausted iterator counts zero. -/
+@[simp]
+theorem core.iter.traits.iterator.Iterator.count.default_none
+    {Self Item : Type} (IterInst : core.iter.traits.iterator.Iterator Self Item)
+    (self self1 : Self) (h : IterInst.next self = ok (none, self1)) :
+    core.iter.traits.iterator.Iterator.count.default IterInst self = ok 0#usize := by
+  rw [core.iter.traits.iterator.Iterator.count.default.eq_def, h]
+  simp
+
+/-- `@[step]` spec for the terminating case: an exhausted iterator counts zero. -/
+@[step]
+theorem core.iter.traits.iterator.Iterator.count.default.spec_exhausted
+    {Self Item : Type} (IterInst : core.iter.traits.iterator.Iterator Self Item)
+    (self self1 : Self) (h : IterInst.next self = ok (none, self1)) :
+    core.iter.traits.iterator.Iterator.count.default IterInst self
+    ⦃ n => n.val = 0 ⦄ := by
+  rw [core.iter.traits.iterator.Iterator.count.default.eq_def, h]
+  simp [WP.spec_ok]
+
+/-- One more element counts one more, provided the count does not overflow. -/
+theorem core.iter.traits.iterator.Iterator.count.default_some
+    {Self Item : Type} (IterInst : core.iter.traits.iterator.Iterator Self Item)
+    (self self1 : Self) (x : Item) (h : IterInst.next self = ok (some x, self1)) :
+    core.iter.traits.iterator.Iterator.count.default IterInst self
+      = (do let n ← core.iter.traits.iterator.Iterator.count.default IterInst self1
+            n + 1#usize) := by
+  rw [core.iter.traits.iterator.Iterator.count.default.eq_def, h]
+  simp
+
+@[trait_default, rust_fun "core::iter::traits::iterator::Iterator::count"]
+def core.iter.traits.iterator.Iterator.count.trait_default
+  {Self Item : Type}
+  (IterInst : core.iter.traits.iterator.Iterator Self Item) :
+  Self → Result Std.Usize :=
+  core.iter.traits.iterator.Iterator.count.default IterInst
+
 /-- `Iterator::rev` default body: `Rev { iter: self }`. -/
 def core.iter.traits.iterator.Iterator.rev.default
   {Self : Type} :
