@@ -182,6 +182,59 @@ pub fn test_slice_into_iter() {
 }
 
 // ============================================================================
+// Any (slice::Iter specialisation)
+// ============================================================================
+
+/// `any` stops at the first match: the match is consumed, later elements remain.
+#[verify::test]
+pub fn test_any_match_consumes() {
+    let v: [u32; 3] = [0, 5, 7];
+    let mut it = v.iter();
+    assert!(it.any(|x| *x != 0));
+    assert!(*it.next().unwrap() == 7);
+    assert!(it.next().is_none());
+}
+
+/// A match on the first element consumes only that element.
+#[verify::test]
+pub fn test_any_match_first() {
+    let v: [u32; 2] = [3, 0];
+    let mut it = v.iter();
+    assert!(it.any(|x| *x != 0));
+    assert!(*it.next().unwrap() == 0);
+}
+
+/// No match: `false`, and the iterator is exhausted.
+#[verify::test]
+pub fn test_any_no_match() {
+    let v: [u32; 2] = [0, 0];
+    let mut it = v.iter();
+    assert!(!it.any(|x| *x != 0));
+    assert!(it.next().is_none());
+}
+
+#[verify::test]
+pub fn test_any_empty() {
+    let v: [u32; 0] = [];
+    let mut it = v.iter();
+    assert!(!it.any(|x| *x != 0));
+    assert!(it.next().is_none());
+}
+
+/// The predicate's state carries over between calls: this one is true on the second call.
+#[verify::test]
+pub fn test_any_stateful_predicate() {
+    let v: [u32; 4] = [1, 2, 3, 4];
+    let mut it = v.iter();
+    let mut calls: u32 = 0;
+    assert!(it.any(move |_| {
+        calls += 1;
+        calls == 2
+    }));
+    assert!(*it.next().unwrap() == 3);
+}
+
+// ============================================================================
 // Chaining tests: enumerate().step_by(), enumerate().take()
 // ============================================================================
 
@@ -417,16 +470,18 @@ pub fn test_take_while_empty() {
     assert!(it.next().is_none());
 }
 
-pub fn take_while_lt_ten(v: &[u32]) -> Option<u32> {
-    let mut it = v.iter().take_while(|x| **x < 10);
-    it.next().copied()
+/// Takes any iterator, so a `TakeWhile` passed here needs its `Iterator` instance.
+fn first<'a, I: Iterator<Item = &'a u32>>(mut it: I) -> Option<&'a u32> {
+    it.next()
 }
 
-pub fn take_while_twice(v: &[u32]) -> (Option<u32>, Option<u32>) {
-    let mut it = v.iter().take_while(|x| **x < 10);
-    let a = it.next().copied();
-    let b = it.next().copied();
-    (a, b)
+/// A `TakeWhile` used through the `Iterator` trait rather than its own `next`.
+#[verify::test]
+pub fn test_take_while_as_iterator() {
+    let v: [u32; 3] = [1, 30, 2];
+    assert!(*first(v.iter().take_while(|x| **x < 10)).unwrap() == 1);
+    let w: [u32; 2] = [30, 1];
+    assert!(first(w.iter().take_while(|x| **x < 10)).is_none());
 }
 
 // ============================================================================
@@ -442,6 +497,15 @@ pub fn test_rev_slice() {
     assert!(*it.next().unwrap() == 2);
     assert!(*it.next().unwrap() == 1);
     assert!(it.next().is_none());
+}
+
+/// A `Rev` used through the `Iterator` trait rather than its own `next`.
+#[verify::test]
+pub fn test_rev_as_iterator() {
+    let v: [u32; 3] = [1, 2, 3];
+    assert!(*first(v.iter().rev()).unwrap() == 3);
+    let w: [u32; 0] = [];
+    assert!(first(w.iter().rev()).is_none());
 }
 
 #[verify::test]
