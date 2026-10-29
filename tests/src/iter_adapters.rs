@@ -182,6 +182,59 @@ pub fn test_slice_into_iter() {
 }
 
 // ============================================================================
+// Any (slice::Iter specialisation)
+// ============================================================================
+
+/// `any` stops at the first match: the match is consumed, later elements remain.
+#[verify::test]
+pub fn test_any_match_consumes() {
+    let v: [u32; 3] = [0, 5, 7];
+    let mut it = v.iter();
+    assert!(it.any(|x| *x != 0));
+    assert!(*it.next().unwrap() == 7);
+    assert!(it.next().is_none());
+}
+
+/// A match on the first element consumes only that element.
+#[verify::test]
+pub fn test_any_match_first() {
+    let v: [u32; 2] = [3, 0];
+    let mut it = v.iter();
+    assert!(it.any(|x| *x != 0));
+    assert!(*it.next().unwrap() == 0);
+}
+
+/// No match: `false`, and the iterator is exhausted.
+#[verify::test]
+pub fn test_any_no_match() {
+    let v: [u32; 2] = [0, 0];
+    let mut it = v.iter();
+    assert!(!it.any(|x| *x != 0));
+    assert!(it.next().is_none());
+}
+
+#[verify::test]
+pub fn test_any_empty() {
+    let v: [u32; 0] = [];
+    let mut it = v.iter();
+    assert!(!it.any(|x| *x != 0));
+    assert!(it.next().is_none());
+}
+
+/// The predicate's state carries over between calls: this one is true on the second call.
+#[verify::test]
+pub fn test_any_stateful_predicate() {
+    let v: [u32; 4] = [1, 2, 3, 4];
+    let mut it = v.iter();
+    let mut calls: u32 = 0;
+    assert!(it.any(move |_| {
+        calls += 1;
+        calls == 2
+    }));
+    assert!(*it.next().unwrap() == 3);
+}
+
+// ============================================================================
 // Chaining tests: enumerate().step_by(), enumerate().take()
 // ============================================================================
 
