@@ -1016,12 +1016,18 @@ let export_global (fmt : Format.formatter) (config : gen_config) (ctx : gen_ctx)
     <> None
   in
 
+  (* We ignore the anonymous constants (i.e., the promoted constants): the
+     reads of those constants are replaced with calls to their initializers
+     (see [PrePasses.anon_consts_to_calls]), which are then inlined (see
+     [PureMicroPassesGeneral.inline_anon_const_initializers]) *)
+  let is_anon_const = LlbcAstUtils.global_decl_is_anon_const global in
+
   (* Check if we extract the global itself *)
   let extract =
     config.extract_globals
     && (((not is_opaque) && config.extract_transparent)
        || (is_opaque && config.extract_opaque))
-    && not is_builtin
+    && (not is_builtin) && not is_anon_const
   in
   if extract then (
     (* We don't wrap global declaration groups between calls to functions
@@ -1158,7 +1164,13 @@ let extract_definitions (fmt : Format.formatter) (config : gen_config)
           [%craise_opt_span] None "Mutually recursive globals are not supported"
         else (* Translate *)
           export_functions_group pure_funs
-    | GlobalGroup (NonRecGroup id) -> export_global id
+    | GlobalGroup (NonRecGroup id) ->
+        (* The globals without initializers are constants which we inline *)
+        let global =
+          GlobalDeclId.Map.find id ctx.trans_ctx.crate.global_decls
+        in
+        if Option.is_some (Charon.GAstUtils.init_fun_id_of_global global) then
+          export_global id
     | GlobalGroup (RecGroup _ids) ->
         [%craise_opt_span] None "Mutually recursive globals are not supported"
     | TraitDeclGroup (RecGroup ids) ->
@@ -1285,6 +1297,7 @@ let extract_file (config : gen_config) (ctx : gen_ctx) (fi : extract_file_info)
   (* Open the file and create the formatter *)
   let out = open_out fi.filename in
   let fmt = Format.formatter_of_out_channel out in
+  FormatCompat.use_byte_width fmt;
 
   (* Tell EmitJson file/namespace for the upcoming declarations. *)
   EmitJson.begin_file_if_enabled ~filename:fi.filename ~namespace:fi.namespace
@@ -1380,6 +1393,7 @@ let extract_file (config : gen_config) (ctx : gen_ctx) (fi : extract_file_info)
           "linter.style.whitespace";
           "linter.style.setOption";
           "linter.style.longLine";
+          "linter.internalConstructors";
         ];
       (* Max heart beats *)
       Printf.fprintf out
@@ -1767,11 +1781,16 @@ let extract_translated_crate (filename : string) (dest_dir : string)
     ^ "\n- full_dest_dir: " ^ full_dest_dir ^ "\n- extract_filebasename: "
     ^ extract_filebasename];
 
+  (* Create a directory and its missing parents, with *default* permissions *)
+  let rec mkdir_p dir =
+    if not (Sys.file_exists dir) then (
+      mkdir_p (Filename.dirname dir);
+      Sys.mkdir dir 0o777)
+  in
   let mkdir_if dest_dir =
     if not (Sys.file_exists dest_dir) then (
       log#linfo (lazy ("Creating missing directory: " ^ dest_dir));
-      (* Create a directory with *default* permissions *)
-      Core_unix.mkdir_p dest_dir)
+      mkdir_p dest_dir)
   in
 
   (* Create the directory, if necessary *)

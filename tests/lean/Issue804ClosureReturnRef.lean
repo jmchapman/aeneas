@@ -10,6 +10,7 @@ set_option linter.unusedVariables false
 set_option linter.style.whitespace false
 set_option linter.style.setOption false
 set_option linter.style.longLine false
+set_option linter.internalConstructors false
 
 /- You can set the `maxHeartbeats` value with the `-max-heartbeats` CLI option -/
 set_option maxHeartbeats 1000000
@@ -28,7 +29,7 @@ namespace issue_804_closure_return_ref
     Visibility: public -/
 @[rust_fun "core::array::from_fn"]
 axiom core.array.from_fn
-  {T : Type} {F : Type} (N : Std.Usize) (opsfunctionFnMutFTupleUsizeTInst :
+  {T : Type _} {F : Type _} (N : Std.Usize) (opsfunctionFnMutFTupleUsizeTInst :
   core.ops.function.FnMut F Std.Usize T) :
   F → Result (Array T N)
 
@@ -37,40 +38,40 @@ axiom core.array.from_fn
 @[reducible]
 def each_ref.closure := Array Std.U8 10#usize
 
-/-- [issue_804_closure_return_ref::each_ref::{impl core::ops::function::FnMut<(usize,), &'_ u8> for issue_804_closure_return_ref::each_ref::{closure}<'_0>}::call_mut]:
+/-- [issue_804_closure_return_ref::each_ref::{impl core::ops::function::FnMut<(usize,), &'_0 u8> for issue_804_closure_return_ref::each_ref::{closure}<'_0, '_1>}::call_mut]:
     Source: 'tests/src/issue-804-closure-return-ref.rs', lines 6:24-6:33 -/
-def each_ref.closure.Insts.CoreOpsFunctionFnMutTupleUsizeSharedU8.call_mut
+def each_ref.closure.Insts.CoreOpsFunctionFnMutTupleUsizeShared0U8.call_mut
   (c : each_ref.closure) (tupled_args : Std.Usize) :
   Result (Std.U8 × each_ref.closure)
   := do
   let i ← Array.index_usize c tupled_args
   ok (i, c)
 
-/-- [issue_804_closure_return_ref::each_ref::{impl core::ops::function::FnOnce<(usize,), &'_ u8> for issue_804_closure_return_ref::each_ref::{closure}<'_0>}::call_once]:
+/-- [issue_804_closure_return_ref::each_ref::{impl core::ops::function::FnOnce<(usize,), &'_0 u8> for issue_804_closure_return_ref::each_ref::{closure}<'_0, '_1>}::call_once]:
     Source: 'tests/src/issue-804-closure-return-ref.rs', lines 6:24-6:33 -/
-def each_ref.closure.Insts.CoreOpsFunctionFnOnceTupleUsizeSharedU8.call_once
+def each_ref.closure.Insts.CoreOpsFunctionFnOnceTupleUsizeShared0U8.call_once
   (c : each_ref.closure) (i : Std.Usize) : Result Std.U8 := do
   let (i1, _) ←
-    each_ref.closure.Insts.CoreOpsFunctionFnMutTupleUsizeSharedU8.call_mut c i
+    each_ref.closure.Insts.CoreOpsFunctionFnMutTupleUsizeShared0U8.call_mut c i
   ok i1
 
-/-- Trait implementation: [issue_804_closure_return_ref::each_ref::{impl core::ops::function::FnOnce<(usize,), &'_ u8> for issue_804_closure_return_ref::each_ref::{closure}<'_0>}]
+/-- Trait implementation: [issue_804_closure_return_ref::each_ref::{impl core::ops::function::FnOnce<(usize,), &'_0 u8> for issue_804_closure_return_ref::each_ref::{closure}<'_0, '_1>}]
     Source: 'tests/src/issue-804-closure-return-ref.rs', lines 6:24-6:33 -/
 @[reducible]
-def each_ref.closure.Insts.CoreOpsFunctionFnOnceTupleUsizeSharedU8 :
+def each_ref.closure.Insts.CoreOpsFunctionFnOnceTupleUsizeShared0U8 :
   core.ops.function.FnOnce each_ref.closure Std.Usize Std.U8 := {
   call_once :=
-    each_ref.closure.Insts.CoreOpsFunctionFnOnceTupleUsizeSharedU8.call_once
+    each_ref.closure.Insts.CoreOpsFunctionFnOnceTupleUsizeShared0U8.call_once
 }
 
-/-- Trait implementation: [issue_804_closure_return_ref::each_ref::{impl core::ops::function::FnMut<(usize,), &'_ u8> for issue_804_closure_return_ref::each_ref::{closure}<'_0>}]
+/-- Trait implementation: [issue_804_closure_return_ref::each_ref::{impl core::ops::function::FnMut<(usize,), &'_0 u8> for issue_804_closure_return_ref::each_ref::{closure}<'_0, '_1>}]
     Source: 'tests/src/issue-804-closure-return-ref.rs', lines 6:24-6:33 -/
 @[reducible]
-def each_ref.closure.Insts.CoreOpsFunctionFnMutTupleUsizeSharedU8 :
+def each_ref.closure.Insts.CoreOpsFunctionFnMutTupleUsizeShared0U8 :
   core.ops.function.FnMut each_ref.closure Std.Usize Std.U8 := {
-  FnOnceInst := each_ref.closure.Insts.CoreOpsFunctionFnOnceTupleUsizeSharedU8
+  FnOnceInst := each_ref.closure.Insts.CoreOpsFunctionFnOnceTupleUsizeShared0U8
   call_mut :=
-    each_ref.closure.Insts.CoreOpsFunctionFnMutTupleUsizeSharedU8.call_mut
+    each_ref.closure.Insts.CoreOpsFunctionFnMutTupleUsizeShared0U8.call_mut
 }
 
 /-- [issue_804_closure_return_ref::each_ref]:
@@ -78,6 +79,6 @@ def each_ref.closure.Insts.CoreOpsFunctionFnMutTupleUsizeSharedU8 :
     Visibility: public -/
 def each_ref (s : Array Std.U8 10#usize) : Result (Array Std.U8 10#usize) := do
   core.array.from_fn 10#usize
-    each_ref.closure.Insts.CoreOpsFunctionFnMutTupleUsizeSharedU8 s
+    each_ref.closure.Insts.CoreOpsFunctionFnMutTupleUsizeShared0U8 s
 
 end issue_804_closure_return_ref
