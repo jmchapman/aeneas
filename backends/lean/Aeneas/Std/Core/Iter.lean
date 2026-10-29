@@ -1005,6 +1005,22 @@ def core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator
         if b then ok (some x, ⟨it, false, p⟩)
         else ok (none, ⟨it, true, p⟩)
 
+@[reducible, rust_trait_impl
+  "core::iter::traits::iterator::Iterator<core::iter::adapters::take_while::TakeWhile<@I, @P>, @Clause0_Item>"]
+impl_def core.iter.traits.iterator.IteratorTakeWhile {I P Item : Type _}
+    (IterInst : core.iter.traits.iterator.Iterator I Item)
+    (PredInst : core.ops.function.FnMut P Item Bool) :
+    core.iter.traits.iterator.Iterator (core.iter.adapters.take_while.TakeWhile I P) Item := {
+  next := core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.next
+    IterInst PredInst
+  step_by := core.iter.traits.iterator.Iterator.step_by.trait_default
+    (core.iter.traits.iterator.IteratorTakeWhile IterInst PredInst)
+  enumerate := core.iter.traits.iterator.Iterator.enumerate.trait_default
+    (core.iter.traits.iterator.IteratorTakeWhile IterInst PredInst)
+  take := core.iter.traits.iterator.Iterator.take.trait_default
+    (core.iter.traits.iterator.IteratorTakeWhile IterInst PredInst)
+}
+
 /-- `Iterator::next` on `Rev<I>`: delegates to the inner `next_back`. -/
 @[rust_fun
   "core::iter::adapters::rev::{core::iter::traits::iterator::Iterator<core::iter::adapters::rev::Rev<@I>, @Clause0_Clause0_Item>}::next"]
@@ -1016,6 +1032,20 @@ def core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator.next
   fun self => do
     let (o, it) ← DEInst.next_back self.iter
     ok (o, ⟨it⟩)
+
+@[reducible, rust_trait_impl
+  "core::iter::traits::iterator::Iterator<core::iter::adapters::rev::Rev<@I>, @Clause0_Clause0_Item>"]
+impl_def core.iter.traits.iterator.IteratorRev {I Item : Type _}
+    (DEInst : core.iter.traits.double_ended.DoubleEndedIterator I Item) :
+    core.iter.traits.iterator.Iterator (core.iter.adapters.rev.Rev I) Item := {
+  next := core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator.next DEInst
+  step_by := core.iter.traits.iterator.Iterator.step_by.trait_default
+    (core.iter.traits.iterator.IteratorRev DEInst)
+  enumerate := core.iter.traits.iterator.Iterator.enumerate.trait_default
+    (core.iter.traits.iterator.IteratorRev DEInst)
+  take := core.iter.traits.iterator.Iterator.take.trait_default
+    (core.iter.traits.iterator.IteratorRev DEInst)
+}
 
 /-- `Range<A>::next_back` (`DoubleEndedIterator`): if `start < end`, decrement
     `end` by one and yield the new `end`; otherwise `none`. -/
