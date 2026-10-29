@@ -111,6 +111,31 @@ theorem core.slice.iter.IteratorSliceIter.next_back.spec
   rw [List.getElem?_eq_getElem (by scalar_tac), Slice.getElem_Nat_eq]
   scalar_tac
 
+/-- `Iterator::count` on `slice::Iter`.
+
+The standard library specialises this in the `iterator!` macro
+(`library/core/src/slice/iter/macros.rs`) rather than draining the iterator:
+```rust
+fn count(self) -> usize {
+    len!(self)
+}
+```
+where `len!` is the number of elements between `ptr` and `end`. As for `next_back`, the model's
+remaining elements are `slice[i..slice.length]`, so that is `slice.length - i`. -/
+@[rust_fun
+  "core::slice::iter::{core::iter::traits::iterator::Iterator<core::slice::iter::Iter<'a, @T>, &'a @T>}::count"]
+def core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.count
+  {T : Type _} (it : core.slice.iter.Iter T) : Result Std.Usize :=
+  ok (Std.Usize.ofNatCore (it.slice.val.length - it.i) (by scalar_tac))
+
+@[step]
+theorem core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.count.spec
+    {T : Type _} (it : core.slice.iter.Iter T) :
+    core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.count it
+    ⦃ n => n.val = it.slice.val.length - it.i ⦄ := by
+  unfold core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.count
+  simp [WP.spec_ok]
+
 @[reducible, rust_trait_impl
   "core::iter::traits::iterator::Iterator<core::slice::iter::Iter<'a, @T>, &'a @T>"]
 impl_def core.iter.traits.iterator.IteratorSliceIter (T : Type _) :
@@ -123,6 +148,42 @@ impl_def core.iter.traits.iterator.IteratorSliceIter (T : Type _) :
   take := core.iter.traits.iterator.Iterator.take.trait_default
     (core.iter.traits.iterator.IteratorSliceIter T)
 }
+
+/-- A slice iterator yields the elements it has not reached yet, `slice[i..]`. -/
+theorem core.slice.iter.IteratorSliceIter.yields
+    {T : Type _} (it : core.slice.iter.Iter T) :
+    core.iter.traits.iterator.Iterator.Yields (core.iter.traits.iterator.IteratorSliceIter T) it
+      (it.slice.val.drop it.i) := by
+  generalize hk : it.slice.val.length - it.i = k
+  induction k generalizing it with
+  | zero =>
+    have : it.slice.val.drop it.i = [] := List.drop_eq_nil_of_le (by omega)
+    rw [this]
+    apply core.iter.traits.iterator.Iterator.Yields.nil it it
+    simp [core.slice.iter.IteratorSliceIter.next]
+    omega
+  | succ k ih =>
+    have hi : it.i < it.slice.val.length := by omega
+    rw [List.drop_eq_getElem_cons hi]
+    apply core.iter.traits.iterator.Iterator.Yields.cons it { it with i := it.i + 1 }
+    · show core.slice.iter.IteratorSliceIter.next it = _
+      unfold core.slice.iter.IteratorSliceIter.next
+      split
+      · rfl
+      · scalar_tac
+    · exact ih { it with i := it.i + 1 } (by simp; omega)
+
+/-- `Iterator::count`'s default body on a slice iterator counts the remaining elements, which is
+    what the specialised `count` returns: the specialisation agrees with the default. -/
+theorem core.slice.iter.IteratorSliceIter.count_default_spec
+    {T : Type _} (it : core.slice.iter.Iter T) :
+    core.iter.traits.iterator.Iterator.count.default
+      (core.iter.traits.iterator.IteratorSliceIter T) it
+    ⦃ n => n.val = it.slice.val.length - it.i ⦄ := by
+  apply WP.spec_mono (core.iter.traits.iterator.Iterator.count.default.spec _ it _
+    (core.slice.iter.IteratorSliceIter.yields it) (by simp; scalar_tac))
+  intro n hn
+  simp_all
 
 -- ============================================================================
 -- IntoIterator for shared array references: &[T; N] → Iter<T>
