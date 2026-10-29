@@ -91,7 +91,7 @@ one, and `i` is left untouched, as `ptr` is. -/
 @[rust_fun
   "core::slice::iter::{core::iter::traits::double_ended::DoubleEndedIterator<core::slice::iter::Iter<'a, @T>, &'_ @T>}::next_back"]
 def core.slice.iter.IteratorSliceIter.next_back
-  {T : Type} (it : core.slice.iter.Iter T) : Result ((Option T) × (core.slice.iter.Iter T)) :=
+  {T : Type _} (it : core.slice.iter.Iter T) : Result ((Option T) × (core.slice.iter.Iter T)) :=
   if h : it.i < it.slice.val.length then
     let n := it.slice.val.length - 1
     let x := it.slice[n]'(by scalar_tac)
@@ -101,7 +101,7 @@ def core.slice.iter.IteratorSliceIter.next_back
 
 @[step]
 theorem core.slice.iter.IteratorSliceIter.next_back.spec
-    {T : Type} (it : core.slice.iter.Iter T) (h : it.i < it.slice.val.length) :
+    {T : Type _} (it : core.slice.iter.Iter T) (h : it.i < it.slice.val.length) :
     core.slice.iter.IteratorSliceIter.next_back it
     ⦃ r => r.1 = it.slice.val.getLast? ∧
            r.2.slice.val = it.slice.val.take (it.slice.val.length - 1) ∧
@@ -125,12 +125,12 @@ remaining elements are `slice[i..slice.length]`, so that is `slice.length - i`. 
 @[rust_fun
   "core::slice::iter::{core::iter::traits::iterator::Iterator<core::slice::iter::Iter<'a, @T>, &'a @T>}::count"]
 def core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.count
-  {T : Type} (it : core.slice.iter.Iter T) : Result Std.Usize :=
+  {T : Type _} (it : core.slice.iter.Iter T) : Result Std.Usize :=
   ok (Std.Usize.ofNatCore (it.slice.val.length - it.i) (by scalar_tac))
 
 @[step]
 theorem core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.count.spec
-    {T : Type} (it : core.slice.iter.Iter T) :
+    {T : Type _} (it : core.slice.iter.Iter T) :
     core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.count it
     ⦃ n => n.val = it.slice.val.length - it.i ⦄ := by
   unfold core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.count
@@ -151,7 +151,7 @@ impl_def core.iter.traits.iterator.IteratorSliceIter (T : Type _) :
 
 /-- A slice iterator yields the elements it has not reached yet, `slice[i..]`. -/
 theorem core.slice.iter.IteratorSliceIter.yields
-    {T : Type} (it : core.slice.iter.Iter T) :
+    {T : Type _} (it : core.slice.iter.Iter T) :
     core.iter.traits.iterator.Iterator.Yields (core.iter.traits.iterator.IteratorSliceIter T) it
       (it.slice.val.drop it.i) := by
   generalize hk : it.slice.val.length - it.i = k
@@ -176,7 +176,7 @@ theorem core.slice.iter.IteratorSliceIter.yields
 /-- `Iterator::count`'s default body on a slice iterator counts the remaining elements, which is
     what the specialised `count` returns: the specialisation agrees with the default. -/
 theorem core.slice.iter.IteratorSliceIter.count_default_spec
-    {T : Type} (it : core.slice.iter.Iter T) :
+    {T : Type _} (it : core.slice.iter.Iter T) :
     core.iter.traits.iterator.Iterator.count.default
       (core.iter.traits.iterator.IteratorSliceIter T) it
     ⦃ n => n.val = it.slice.val.length - it.i ⦄ := by
