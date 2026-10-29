@@ -65,6 +65,31 @@ pub fn test_take_more_than_available() {
 }
 
 // ============================================================================
+// Count
+// ============================================================================
+
+/// `count` on a slice iterator: Rust specialises this to the number remaining.
+#[verify::test]
+pub fn test_count_slice() {
+    let v: [u32; 3] = [1, 2, 3];
+    assert!(v.iter().count() == 3);
+}
+
+#[verify::test]
+pub fn test_count_empty_slice() {
+    let v: [u32; 0] = [];
+    assert!(v.iter().count() == 0);
+}
+
+/// `StepBy` does not specialise `count`, so this goes through `Iterator::count`'s
+/// default body, which drains the iterator.
+#[verify::test]
+pub fn test_count_step_by() {
+    let v: [u32; 5] = [1, 2, 3, 4, 5];
+    assert!(v.iter().step_by(2).count() == 3);
+}
+
+// ============================================================================
 // Range iteration over various scalar types
 // ============================================================================
 
@@ -354,8 +379,43 @@ pub fn test_range_inclusive_empty() {
 // TakeWhile
 // ============================================================================
 
-// Not `#[verify::test]`: a closure predicate is noncomputable, and a named `fn` one
-// aborts under `-checks` (TypesAnalysis.ml:968).
+/// Yields while the predicate holds, then stops at the first element that fails it.
+#[verify::test]
+pub fn test_take_while_stops_at_first_false() {
+    let v: [u32; 4] = [1, 2, 30, 4];
+    let mut it = v.iter().take_while(|x| **x < 10);
+    assert!(*it.next().unwrap() == 1);
+    assert!(*it.next().unwrap() == 2);
+    assert!(it.next().is_none());
+}
+
+/// Once the predicate has failed, `flag` latches: the iterator stays exhausted
+/// even though the underlying slice still has elements passing the predicate.
+#[verify::test]
+pub fn test_take_while_latches() {
+    let v: [u32; 3] = [30, 1, 2];
+    let mut it = v.iter().take_while(|x| **x < 10);
+    assert!(it.next().is_none());
+    assert!(it.next().is_none());
+}
+
+/// Every element passes: the adapter yields the whole slice, then `none`.
+#[verify::test]
+pub fn test_take_while_all_pass() {
+    let v: [u32; 3] = [1, 2, 3];
+    let mut it = v.iter().take_while(|x| **x < 10);
+    assert!(*it.next().unwrap() == 1);
+    assert!(*it.next().unwrap() == 2);
+    assert!(*it.next().unwrap() == 3);
+    assert!(it.next().is_none());
+}
+
+#[verify::test]
+pub fn test_take_while_empty() {
+    let v: [u32; 0] = [];
+    let mut it = v.iter().take_while(|x| **x < 10);
+    assert!(it.next().is_none());
+}
 
 pub fn take_while_lt_ten(v: &[u32]) -> Option<u32> {
     let mut it = v.iter().take_while(|x| **x < 10);
@@ -367,28 +427,6 @@ pub fn take_while_twice(v: &[u32]) -> (Option<u32>, Option<u32>) {
     let a = it.next().copied();
     let b = it.next().copied();
     (a, b)
-}
-
-// ============================================================================
-// Count
-// ============================================================================
-
-/// `count` on a slice iterator: Rust specialises this to the number remaining.
-#[verify::test]
-pub fn test_count_slice() {
-    let v: [u32; 3] = [1, 2, 3];
-    assert!(v.iter().count() == 3);
-}
-
-#[verify::test]
-pub fn test_count_empty_slice() {
-    let v: [u32; 0] = [];
-    assert!(v.iter().count() == 0);
-}
-
-/// `count` through an adapter goes via `Iterator::count`'s default body.
-pub fn count_after_take(v: &[u32]) -> usize {
-    v.iter().take(2).count()
 }
 
 // ============================================================================

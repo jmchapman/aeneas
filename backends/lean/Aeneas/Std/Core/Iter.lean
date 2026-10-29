@@ -722,56 +722,120 @@ def core.iter.traits.iterator.Iterator.zip.trait_default
   Self → U → Result (core.iter.adapters.zip.Zip Self IntoIter) :=
   core.iter.traits.iterator.Iterator.zip.default IntoIterInst.into_iter
 
-/-- `Iterator::count` default body: drain the iterator, counting the elements.
+/-- The loop of `Iterator::count`'s default body.
 
-    Defined by `partial_fixpoint` because there is no decreasing measure on a general
-    `Self` — as in Rust, `count` need not terminate; on an infinite iterator the value
-    is `Result.div`. -/
-def core.iter.traits.iterator.Iterator.count.default
-  {Self Item : Type _}
-  (IterInst : core.iter.traits.iterator.Iterator Self Item) :
+The standard library defines `count` as a fold (`library/core/src/iter/traits/iterator.rs`):
+```rust
+fn count(self) -> usize {
+    self.fold(0, #[rustc_inherit_overflow_checks] |accum, _elem| accum + 1)
+}
+```
+and `fold`'s default body is the loop
+```rust
+let mut accum = init;
+while let Some(x) = self.next() {
+    accum = f(accum, x);
+}
+accum
+```
+This is that loop with `f` inlined: `accum` is the count so far, incremented as each element
+arrives. The increment is checked, as `#[rustc_inherit_overflow_checks]` makes it when overflow
+checks are on, so the model fails at the same element Rust panics at.
+
+Defined by `partial_fixpoint` because there is no decreasing measure on a general `Self`: as in
+Rust, the loop need not terminate, and on an infinite iterator whose count never overflows the
+value is `Result.div`. `alloc.vec.FromIteratorVec.iterToList` is defined the same way. -/
+def core.iter.traits.iterator.Iterator.count.default.loop
+  {Self Item : Type}
+  (IterInst : core.iter.traits.iterator.Iterator Self Item) (accum : Std.Usize) :
   Self → Result Std.Usize :=
   fun self => do
     let (o, self1) ← IterInst.next self
     match o with
-    | none => ok 0#usize
+    | none => ok accum
     | some _ => do
-      let n ← core.iter.traits.iterator.Iterator.count.default IterInst self1
-      n + 1#usize
+      let accum1 ← accum + 1#usize
+      core.iter.traits.iterator.Iterator.count.default.loop IterInst accum1 self1
 partial_fixpoint
 
-/-- An exhausted iterator counts zero. -/
+/-- `Iterator::count` default body: `fold` from `0`. See `count.default.loop`. -/
+def core.iter.traits.iterator.Iterator.count.default
+  {Self Item : Type}
+  (IterInst : core.iter.traits.iterator.Iterator Self Item) :
+  Self → Result Std.Usize :=
+  core.iter.traits.iterator.Iterator.count.default.loop IterInst 0#usize
+
+/-- An exhausted iterator returns the count so far. -/
 @[simp]
-theorem core.iter.traits.iterator.Iterator.count.default_none
-    {Self Item : Type _} (IterInst : core.iter.traits.iterator.Iterator Self Item)
-    (self self1 : Self) (h : IterInst.next self = ok (none, self1)) :
-    core.iter.traits.iterator.Iterator.count.default IterInst self = ok 0#usize := by
-  rw [core.iter.traits.iterator.Iterator.count.default.eq_def, h]
+theorem core.iter.traits.iterator.Iterator.count.default.loop_none
+    {Self Item : Type} (IterInst : core.iter.traits.iterator.Iterator Self Item)
+    (accum : Std.Usize) (self self1 : Self) (h : IterInst.next self = ok (none, self1)) :
+    core.iter.traits.iterator.Iterator.count.default.loop IterInst accum self = ok accum := by
+  rw [core.iter.traits.iterator.Iterator.count.default.loop.eq_def, h]
   simp
 
-/-- `@[step]` spec for the terminating case: an exhausted iterator counts zero. -/
+/-- One more element increments the count, failing if that overflows, then continues. -/
+theorem core.iter.traits.iterator.Iterator.count.default.loop_some
+    {Self Item : Type} (IterInst : core.iter.traits.iterator.Iterator Self Item)
+    (accum : Std.Usize) (self self1 : Self) (x : Item)
+    (h : IterInst.next self = ok (some x, self1)) :
+    core.iter.traits.iterator.Iterator.count.default.loop IterInst accum self
+      = (do let accum1 ← accum + 1#usize
+            core.iter.traits.iterator.Iterator.count.default.loop IterInst accum1 self1) := by
+  rw [core.iter.traits.iterator.Iterator.count.default.loop.eq_def, h]
+  simp
+
+/-- `Yields IterInst self xs`: calling `next` repeatedly, starting from `self`, returns the
+    elements of `xs` in order and then `none`. -/
+inductive core.iter.traits.iterator.Iterator.Yields {Self Item : Type}
+    (IterInst : core.iter.traits.iterator.Iterator Self Item) : Self → List Item → Prop
+  | nil (self self1 : Self) :
+    IterInst.next self = ok (none, self1) →
+    core.iter.traits.iterator.Iterator.Yields IterInst self []
+  | cons (self self1 : Self) (x : Item) (xs : List Item) :
+    IterInst.next self = ok (some x, self1) →
+    core.iter.traits.iterator.Iterator.Yields IterInst self1 xs →
+    core.iter.traits.iterator.Iterator.Yields IterInst self (x :: xs)
+
+/-- Counting an iterator that yields `xs` from `accum` gives `accum + xs.length`, provided that
+    fits in a `usize`. -/
+theorem core.iter.traits.iterator.Iterator.count.default.loop.spec
+    {Self Item : Type} (IterInst : core.iter.traits.iterator.Iterator Self Item)
+    (accum : Std.Usize) (self : Self) (xs : List Item)
+    (h : core.iter.traits.iterator.Iterator.Yields IterInst self xs)
+    (hmax : accum.val + xs.length ≤ Usize.max) :
+    core.iter.traits.iterator.Iterator.count.default.loop IterInst accum self
+    ⦃ n => n.val = accum.val + xs.length ⦄ := by
+  induction h generalizing accum with
+  | nil self self1 hn =>
+    rw [core.iter.traits.iterator.Iterator.count.default.loop_none IterInst accum self self1 hn]
+    simp [WP.spec_ok]
+  | cons self self1 x xs hn _ ih =>
+    rw [core.iter.traits.iterator.Iterator.count.default.loop_some IterInst accum self self1 x hn]
+    simp only [List.length_cons] at hmax ⊢
+    apply WP.spec_bind (Usize.add_spec (x := accum) (y := 1#usize) (by scalar_tac))
+    intro accum1 h1
+    apply WP.spec_mono (ih accum1 (by scalar_tac))
+    intro r hr
+    scalar_tac
+
+/-- An iterator that yields `xs` counts `xs.length`, provided that fits in a `usize`. -/
 @[step]
-theorem core.iter.traits.iterator.Iterator.count.default.spec_exhausted
-    {Self Item : Type _} (IterInst : core.iter.traits.iterator.Iterator Self Item)
-    (self self1 : Self) (h : IterInst.next self = ok (none, self1)) :
+theorem core.iter.traits.iterator.Iterator.count.default.spec
+    {Self Item : Type} (IterInst : core.iter.traits.iterator.Iterator Self Item)
+    (self : Self) (xs : List Item)
+    (h : core.iter.traits.iterator.Iterator.Yields IterInst self xs)
+    (hmax : xs.length ≤ Usize.max) :
     core.iter.traits.iterator.Iterator.count.default IterInst self
-    ⦃ n => n.val = 0 ⦄ := by
-  rw [core.iter.traits.iterator.Iterator.count.default.eq_def, h]
-  simp [WP.spec_ok]
-
-/-- One more element counts one more, provided the count does not overflow. -/
-theorem core.iter.traits.iterator.Iterator.count.default_some
-    {Self Item : Type _} (IterInst : core.iter.traits.iterator.Iterator Self Item)
-    (self self1 : Self) (x : Item) (h : IterInst.next self = ok (some x, self1)) :
-    core.iter.traits.iterator.Iterator.count.default IterInst self
-      = (do let n ← core.iter.traits.iterator.Iterator.count.default IterInst self1
-            n + 1#usize) := by
-  rw [core.iter.traits.iterator.Iterator.count.default.eq_def, h]
-  simp
+    ⦃ n => n.val = xs.length ⦄ := by
+  unfold core.iter.traits.iterator.Iterator.count.default
+  apply WP.spec_mono (core.iter.traits.iterator.Iterator.count.default.loop.spec IterInst 0#usize self xs h (by scalar_tac))
+  intro r hr
+  scalar_tac
 
 @[trait_default, rust_fun "core::iter::traits::iterator::Iterator::count"]
 def core.iter.traits.iterator.Iterator.count.trait_default
-  {Self Item : Type _}
+  {Self Item : Type}
   (IterInst : core.iter.traits.iterator.Iterator Self Item) :
   Self → Result Std.Usize :=
   core.iter.traits.iterator.Iterator.count.default IterInst
@@ -792,13 +856,13 @@ def core.iter.traits.iterator.Iterator.rev.trait_default
 
 /-- `Iterator::take_while` default body: `TakeWhile { iter: self, flag: false, predicate }`. -/
 def core.iter.traits.iterator.Iterator.take_while.default
-  {Self P : Type _} :
+  {Self P : Type} :
   Self → P → Result (core.iter.adapters.take_while.TakeWhile Self P) :=
   fun self predicate => ok ⟨self, false, predicate⟩
 
 @[trait_default, rust_fun "core::iter::traits::iterator::Iterator::take_while"]
 def core.iter.traits.iterator.Iterator.take_while.trait_default
-  {Self P Item : Type _}
+  {Self P Item : Type}
   (_IteratorInst : core.iter.traits.iterator.Iterator Self Item)
   (_PredInst : core.ops.function.FnMut P Item Bool) :
   Self → P → Result (core.iter.adapters.take_while.TakeWhile Self P) :=
@@ -867,7 +931,7 @@ theorem core.iter.traits.iterator.Iterator.rev.default.spec
 
 @[step]
 theorem core.iter.traits.iterator.Iterator.take_while.default.spec
-    {Self P : Type _} (self : Self) (predicate : P) :
+    {Self P : Type} (self : Self) (predicate : P) :
     core.iter.traits.iterator.Iterator.take_while.default self predicate
     ⦃ t => t.iter = self ∧ t.flag = false ∧ t.predicate = predicate ⦄ := by
   unfold core.iter.traits.iterator.Iterator.take_while.default
@@ -875,7 +939,7 @@ theorem core.iter.traits.iterator.Iterator.take_while.default.spec
 
 @[step]
 theorem core.iter.traits.iterator.Iterator.take_while.trait_default.spec
-    {Self P Item : Type _}
+    {Self P Item : Type}
     (inst : core.iter.traits.iterator.Iterator Self Item)
     (predInst : core.ops.function.FnMut P Item Bool)
     (self : Self) (predicate : P) :
@@ -925,7 +989,7 @@ theorem core.iter.traits.iterator.Iterator.zip.trait_default.spec
 @[rust_fun
   "core::iter::adapters::take_while::{core::iter::traits::iterator::Iterator<core::iter::adapters::take_while::TakeWhile<@I, @P>, @Clause0_Item>}::next"]
 def core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.next
-  {I P Item : Type _}
+  {I P Item : Type}
   (IterInst : core.iter.traits.iterator.Iterator I Item)
   (PredInst : core.ops.function.FnMut P Item Bool) :
   core.iter.adapters.take_while.TakeWhile I P →
