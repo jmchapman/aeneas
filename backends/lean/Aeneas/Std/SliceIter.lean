@@ -91,7 +91,7 @@ one, and `i` is left untouched, as `ptr` is. -/
 @[rust_fun
   "core::slice::iter::{core::iter::traits::double_ended::DoubleEndedIterator<core::slice::iter::Iter<'a, @T>, &'_ @T>}::next_back"]
 def core.slice.iter.IteratorSliceIter.next_back
-  {T : Type _} (it : core.slice.iter.Iter T) : Result ((Option T) × (core.slice.iter.Iter T)) :=
+  {T : Type} (it : core.slice.iter.Iter T) : Result ((Option T) × (core.slice.iter.Iter T)) :=
   if h : it.i < it.slice.val.length then
     let n := it.slice.val.length - 1
     let x := it.slice[n]'(by scalar_tac)
@@ -101,7 +101,7 @@ def core.slice.iter.IteratorSliceIter.next_back
 
 @[step]
 theorem core.slice.iter.IteratorSliceIter.next_back.spec
-    {T : Type _} (it : core.slice.iter.Iter T) (h : it.i < it.slice.val.length) :
+    {T : Type} (it : core.slice.iter.Iter T) (h : it.i < it.slice.val.length) :
     core.slice.iter.IteratorSliceIter.next_back it
     ⦃ r => r.1 = it.slice.val.getLast? ∧
            r.2.slice.val = it.slice.val.take (it.slice.val.length - 1) ∧
@@ -247,7 +247,7 @@ theorem core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.any.lo
     · simp only [hx, Bool.false_eq_true, ↓reduceIte, bind_ok, uncurry_apply_pair]
       apply WP.spec_bind ih
       intro ⟨b1, k⟩ hr
-      simp_all [WP.spec_ok, List.dropWhile_cons]
+      simp_all [WP.spec_ok]
 
 /-- `any` on a slice iterator with a pure predicate `p`: the result is whether any remaining
     element satisfies `p`, and the iterator is left just after the first match (exhausted, if

@@ -1865,4 +1865,82 @@ def test_rev_empty_slice : Result Unit := do
 /- Unit test for [iter_adapters::test_rev_empty_slice] -/
 #guard (test_rev_empty_slice).reducesTo ()
 
+/-- [iter_adapters::test_rev_take_while_count::{closure}]
+    Source: 'tests/src/iter_adapters.rs', lines 522:38-522:50 -/
+@[reducible]
+def test_rev_take_while_count.closure := Unit
+
+/-- [iter_adapters::test_rev_take_while_count::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::test_rev_take_while_count::{closure}<'_0>}::call_mut]:
+    Source: 'tests/src/iter_adapters.rs', lines 522:38-522:50 -/
+def
+  test_rev_take_while_count.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
+  (c : test_rev_take_while_count.closure) (tupled_args : Std.U32) :
+  Result (Bool × test_rev_take_while_count.closure)
+  := do
+  ok (tupled_args != 0#u32, ())
+
+/-- [iter_adapters::test_rev_take_while_count::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::test_rev_take_while_count::{closure}<'_0>}::call_once]:
+    Source: 'tests/src/iter_adapters.rs', lines 522:38-522:50 -/
+def
+  test_rev_take_while_count.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool.call_once
+  (c : test_rev_take_while_count.closure) (i : Std.U32) : Result Bool := do
+  let (b, _) ←
+    test_rev_take_while_count.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
+      () i
+  ok b
+
+/-- Trait implementation: [iter_adapters::test_rev_take_while_count::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::test_rev_take_while_count::{closure}<'_0>}]
+    Source: 'tests/src/iter_adapters.rs', lines 522:38-522:50 -/
+@[reducible]
+def
+  test_rev_take_while_count.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool
+  : core.ops.function.FnOnce test_rev_take_while_count.closure Std.U32 Bool
+  := {
+  call_once :=
+    test_rev_take_while_count.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool.call_once
+}
+
+/-- Trait implementation: [iter_adapters::test_rev_take_while_count::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::test_rev_take_while_count::{closure}<'_0>}]
+    Source: 'tests/src/iter_adapters.rs', lines 522:38-522:50 -/
+@[reducible]
+def
+  test_rev_take_while_count.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
+  : core.ops.function.FnMut test_rev_take_while_count.closure Std.U32 Bool := {
+  FnOnceInst :=
+    test_rev_take_while_count.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool
+  call_mut :=
+    test_rev_take_while_count.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
+}
+
+/-- [iter_adapters::test_rev_take_while_count]:
+    Source: 'tests/src/iter_adapters.rs', lines 520:0-523:1
+    Visibility: public -/
+def test_rev_take_while_count : Result Unit := do
+  let s ← lift (Array.to_slice (Array.make 3#usize [ 0#u32, 1#u32, 2#u32 ]))
+  let i ← core.slice.Slice.iter s
+  let r ←
+    core.iter.traits.iterator.Iterator.rev.trait_default
+      (core.iter.traits.iterator.IteratorSliceIter Std.U32)
+      (core.slice.iter.Iter.Insts.CoreIterTraitsDouble_endedDoubleEndedIteratorSharedT
+      Std.U32) i
+  let tw ←
+    core.iter.traits.iterator.Iterator.take_while.trait_default
+      (core.iter.traits.iterator.IteratorRev
+      (core.slice.iter.Iter.Insts.CoreIterTraitsDouble_endedDoubleEndedIteratorSharedT
+      Std.U32))
+      test_rev_take_while_count.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
+      r ()
+  let i1 ←
+    core.iter.traits.iterator.Iterator.count.trait_default
+      (core.iter.traits.iterator.IteratorTakeWhile
+      (core.iter.traits.iterator.IteratorRev
+      (core.slice.iter.Iter.Insts.CoreIterTraitsDouble_endedDoubleEndedIteratorSharedT
+      Std.U32))
+      test_rev_take_while_count.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool)
+      tw
+  massert (i1 = 2#usize)
+
+/- Unit test for [iter_adapters::test_rev_take_while_count] -/
+#guard (test_rev_take_while_count).reducesTo ()
+
 end iter_adapters

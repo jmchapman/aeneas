@@ -514,3 +514,10 @@ pub fn test_rev_empty_slice() {
     let mut it = v.iter().rev();
     assert!(it.next().is_none());
 }
+
+/// The three adapters compose through their `Iterator` instances.
+#[verify::test]
+pub fn test_rev_take_while_count() {
+    let v: [u32; 3] = [0, 1, 2];
+    assert!(v.iter().rev().take_while(|x| **x != 0).count() == 2);
+}
