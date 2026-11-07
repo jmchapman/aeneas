@@ -69,7 +69,7 @@ impl_def Odd.Insts.CoreIterTraitsIteratorIteratorU32 :
     Visibility: public -/
 def Odd.Insts.CoreIterTraitsDouble_endedDoubleEndedIteratorU32.rfold
   {B : Type _} {F : Type _} (coreopsfunctionFnMutFPairBU32BInst :
-  core.ops.function.FnMut F (B × Std.U32) B) (self : Odd) (init : B)
+  core.ops.function.FnMut F (B × Std.U32) B) (self : Odd) (init : B) 
   (f : F) :
   Result B
   := do

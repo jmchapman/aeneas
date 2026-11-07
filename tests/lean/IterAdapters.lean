@@ -23,6 +23,18 @@ noncomputable section
 
 namespace iter_adapters
 
+/-- [core::iter::traits::iterator::Iterator::any]:
+    Source: '/rustc/library/core/src/iter/traits/iterator.rs', lines 2897:4-2900:37
+    Name pattern: [core::iter::traits::iterator::Iterator::any]
+    Visibility: public -/
+@[trait_default, rust_fun "core::iter::traits::iterator::Iterator::any"]
+axiom core.iter.traits.iterator.Iterator.any.default
+  {Self : Type _} {F : Type _} {Clause0_Item : Type _} (IteratorInst :
+  core.iter.traits.iterator.Iterator Self Clause0_Item)
+  (opsfunctionFnMutFTupleClause0_ItemBoolInst : core.ops.function.FnMut F
+  Clause0_Item Bool) :
+  Self → F → Result (Bool × Self)
+
 /-- [core::iter::adapters::enumerate::{impl core::iter::traits::iterator::Iterator<(usize, Clause0_Item)> for core::iter::adapters::enumerate::Enumerate<I>}::count]:
     Source: '/rustc/library/core/src/iter/adapters/enumerate.rs', lines 101:4-101:27
     Name pattern: [core::iter::adapters::enumerate::{core::iter::traits::iterator::Iterator<core::iter::adapters::enumerate::Enumerate<@I>, (usize, @Clause0_Item)>}::count]
@@ -44,15 +56,6 @@ axiom
 axiom core.ops.range.Range.Insts.CoreIterTraitsIteratorIterator.count
   {A : Type _} (StepInst : core.iter.range.Step A) :
   core.ops.range.Range A → Result Std.Usize
-
-/-- [core::option::{core::option::Option<&'_0 T>}::copied]:
-    Source: '/rustc/library/core/src/option.rs', lines 2135:4-2137:16
-    Name pattern: [core::option::{core::option::Option<&'0 @T>}::copied]
-    Visibility: public -/
-@[rust_fun "core::option::{core::option::Option<&'0 @T>}::copied"]
-axiom core.option.OptionShared0T.copied
-  {T : Type _} (markerCopyInst : core.marker.Copy T) :
-  Option T → Result (Option T)
 
 /-- Trait implementation: [core::slice::iter::{impl core::iter::traits::double_ended::DoubleEndedIterator<&'_ T> for core::slice::iter::Iter<'a, T>}]
     Source: '/rustc/library/core/src/slice/iter/macros.rs', lines 431:8-431:56; this code is generated from a macro invocation at: '/rustc/library/core/src/slice/iter.rs', lines 140:0-148:2
@@ -842,7 +845,7 @@ def test_any_stateful_predicate : Result Unit := do
 #guard (test_any_stateful_predicate).reducesTo ()
 
 /-- [iter_adapters::test_enumerate_step_by]:
-    Source: 'tests/src/iter_adapters.rs', lines 190:0-197:1
+    Source: 'tests/src/iter_adapters.rs', lines 243:0-250:1
     Visibility: public -/
 def test_enumerate_step_by : Result Unit := do
   let s ←
@@ -875,7 +878,7 @@ def test_enumerate_step_by : Result Unit := do
 #guard (test_enumerate_step_by).reducesTo ()
 
 /-- [iter_adapters::test_enumerate_take]:
-    Source: 'tests/src/iter_adapters.rs', lines 201:0-209:1
+    Source: 'tests/src/iter_adapters.rs', lines 254:0-262:1
     Visibility: public -/
 def test_enumerate_take : Result Unit := do
   let s ←
@@ -914,7 +917,7 @@ def test_enumerate_take : Result Unit := do
 #guard (test_enumerate_take).reducesTo ()
 
 /-- [iter_adapters::test_take_exhausted_then_next]:
-    Source: 'tests/src/iter_adapters.rs', lines 213:0-222:1
+    Source: 'tests/src/iter_adapters.rs', lines 266:0-275:1
     Visibility: public -/
 def test_take_exhausted_then_next : Result Unit := do
   let s ← lift (Array.to_slice (Array.make 1#usize [ 42#u32 ]))
@@ -942,7 +945,7 @@ def test_take_exhausted_then_next : Result Unit := do
 #guard (test_take_exhausted_then_next).reducesTo ()
 
 /-- [iter_adapters::test_range_single_element]:
-    Source: 'tests/src/iter_adapters.rs', lines 231:0-235:1
+    Source: 'tests/src/iter_adapters.rs', lines 284:0-288:1
     Visibility: public -/
 def test_range_single_element : Result Unit := do
   let (o, it) ←
@@ -958,7 +961,7 @@ def test_range_single_element : Result Unit := do
 #guard (test_range_single_element).reducesTo ()
 
 /-- [iter_adapters::test_range_u8_near_max]:
-    Source: 'tests/src/iter_adapters.rs', lines 239:0-243:1
+    Source: 'tests/src/iter_adapters.rs', lines 292:0-296:1
     Visibility: public -/
 def test_range_u8_near_max : Result Unit := do
   let (o, it) ←
@@ -974,7 +977,7 @@ def test_range_u8_near_max : Result Unit := do
 #guard (test_range_u8_near_max).reducesTo ()
 
 /-- [iter_adapters::test_range_u8_start_gt_end]:
-    Source: 'tests/src/iter_adapters.rs', lines 247:0-250:1
+    Source: 'tests/src/iter_adapters.rs', lines 300:0-303:1
     Visibility: public -/
 def test_range_u8_start_gt_end : Result Unit := do
   let (o, _) ←
@@ -987,7 +990,7 @@ def test_range_u8_start_gt_end : Result Unit := do
 #guard (test_range_u8_start_gt_end).reducesTo ()
 
 /-- [iter_adapters::test_range_u8_start_eq_end]:
-    Source: 'tests/src/iter_adapters.rs', lines 254:0-257:1
+    Source: 'tests/src/iter_adapters.rs', lines 307:0-310:1
     Visibility: public -/
 def test_range_u8_start_eq_end : Result Unit := do
   let (o, _) ←
@@ -1000,7 +1003,7 @@ def test_range_u8_start_eq_end : Result Unit := do
 #guard (test_range_u8_start_eq_end).reducesTo ()
 
 /-- [iter_adapters::test_range_u16_boundary]:
-    Source: 'tests/src/iter_adapters.rs', lines 261:0-267:1
+    Source: 'tests/src/iter_adapters.rs', lines 314:0-320:1
     Visibility: public -/
 def test_range_u16_boundary : Result Unit := do
   let (o, it) ←
@@ -1025,7 +1028,7 @@ def test_range_u16_boundary : Result Unit := do
 #guard (test_range_u16_boundary).reducesTo ()
 
 /-- [iter_adapters::test_range_u32_boundary]:
-    Source: 'tests/src/iter_adapters.rs', lines 271:0-276:1
+    Source: 'tests/src/iter_adapters.rs', lines 324:0-329:1
     Visibility: public -/
 def test_range_u32_boundary : Result Unit := do
   let (o, it) ←
@@ -1046,7 +1049,7 @@ def test_range_u32_boundary : Result Unit := do
 #guard (test_range_u32_boundary).reducesTo ()
 
 /-- [iter_adapters::test_range_u64_boundary]:
-    Source: 'tests/src/iter_adapters.rs', lines 280:0-286:1
+    Source: 'tests/src/iter_adapters.rs', lines 333:0-339:1
     Visibility: public -/
 def test_range_u64_boundary : Result Unit := do
   let (o, it) ←
@@ -1071,7 +1074,7 @@ def test_range_u64_boundary : Result Unit := do
 #guard (test_range_u64_boundary).reducesTo ()
 
 /-- [iter_adapters::test_range_usize_start_gt_end]:
-    Source: 'tests/src/iter_adapters.rs', lines 290:0-293:1
+    Source: 'tests/src/iter_adapters.rs', lines 343:0-346:1
     Visibility: public -/
 def test_range_usize_start_gt_end : Result Unit := do
   let (o, _) ←
@@ -1084,7 +1087,7 @@ def test_range_usize_start_gt_end : Result Unit := do
 #guard (test_range_usize_start_gt_end).reducesTo ()
 
 /-- [iter_adapters::test_step_by_larger_than_range]:
-    Source: 'tests/src/iter_adapters.rs', lines 297:0-301:1
+    Source: 'tests/src/iter_adapters.rs', lines 350:0-354:1
     Visibility: public -/
 def test_step_by_larger_than_range : Result Unit := do
   let it ←
@@ -1106,7 +1109,7 @@ def test_step_by_larger_than_range : Result Unit := do
 #guard (test_step_by_larger_than_range).reducesTo ()
 
 /-- [iter_adapters::test_step_by_exact_range]:
-    Source: 'tests/src/iter_adapters.rs', lines 305:0-309:1
+    Source: 'tests/src/iter_adapters.rs', lines 358:0-362:1
     Visibility: public -/
 def test_step_by_exact_range : Result Unit := do
   let it ←
@@ -1128,7 +1131,7 @@ def test_step_by_exact_range : Result Unit := do
 #guard (test_step_by_exact_range).reducesTo ()
 
 /-- [iter_adapters::test_step_by_one]:
-    Source: 'tests/src/iter_adapters.rs', lines 313:0-320:1
+    Source: 'tests/src/iter_adapters.rs', lines 366:0-373:1
     Visibility: public -/
 def test_step_by_one : Result Unit := do
   let it ←
@@ -1165,7 +1168,7 @@ def test_step_by_one : Result Unit := do
 #guard (test_step_by_one).reducesTo ()
 
 /-- [iter_adapters::test_step_by_empty]:
-    Source: 'tests/src/iter_adapters.rs', lines 324:0-327:1
+    Source: 'tests/src/iter_adapters.rs', lines 377:0-380:1
     Visibility: public -/
 def test_step_by_empty : Result Unit := do
   let it ←
@@ -1182,7 +1185,7 @@ def test_step_by_empty : Result Unit := do
 #guard (test_step_by_empty).reducesTo ()
 
 /-- [iter_adapters::test_step_by_odd_range]:
-    Source: 'tests/src/iter_adapters.rs', lines 331:0-337:1
+    Source: 'tests/src/iter_adapters.rs', lines 384:0-390:1
     Visibility: public -/
 def test_step_by_odd_range : Result Unit := do
   let it ←
@@ -1214,7 +1217,7 @@ def test_step_by_odd_range : Result Unit := do
 #guard (test_step_by_odd_range).reducesTo ()
 
 /-- [iter_adapters::test_step_by_u8_near_max]:
-    Source: 'tests/src/iter_adapters.rs', lines 341:0-347:1
+    Source: 'tests/src/iter_adapters.rs', lines 394:0-400:1
     Visibility: public -/
 def test_step_by_u8_near_max : Result Unit := do
   let it ←
@@ -1246,7 +1249,7 @@ def test_step_by_u8_near_max : Result Unit := do
 #guard (test_step_by_u8_near_max).reducesTo ()
 
 /-- [iter_adapters::test_range_inclusive_basic]:
-    Source: 'tests/src/iter_adapters.rs', lines 355:0-361:1
+    Source: 'tests/src/iter_adapters.rs', lines 408:0-414:1
     Visibility: public -/
 def test_range_inclusive_basic : Result Unit := do
   let it ← core.ops.range.RangeInclusive.new 1#usize 3#usize
@@ -1275,7 +1278,7 @@ def test_range_inclusive_basic : Result Unit := do
 #guard (test_range_inclusive_basic).reducesTo ()
 
 /-- [iter_adapters::test_range_inclusive_singleton]:
-    Source: 'tests/src/iter_adapters.rs', lines 365:0-369:1
+    Source: 'tests/src/iter_adapters.rs', lines 418:0-422:1
     Visibility: public -/
 def test_range_inclusive_singleton : Result Unit := do
   let it ← core.ops.range.RangeInclusive.new 7#usize 7#usize
@@ -1294,7 +1297,7 @@ def test_range_inclusive_singleton : Result Unit := do
 #guard (test_range_inclusive_singleton).reducesTo ()
 
 /-- [iter_adapters::test_range_inclusive_empty]:
-    Source: 'tests/src/iter_adapters.rs', lines 373:0-376:1
+    Source: 'tests/src/iter_adapters.rs', lines 426:0-429:1
     Visibility: public -/
 def test_range_inclusive_empty : Result Unit := do
   let it ← core.ops.range.RangeInclusive.new 5#usize 3#usize
@@ -1308,12 +1311,12 @@ def test_range_inclusive_empty : Result Unit := do
 #guard (test_range_inclusive_empty).reducesTo ()
 
 /-- [iter_adapters::test_take_while_stops_at_first_false::{closure}]
-    Source: 'tests/src/iter_adapters.rs', lines 386:37-386:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 439:37-439:49 -/
 @[reducible]
 def test_take_while_stops_at_first_false.closure := Unit
 
 /-- [iter_adapters::test_take_while_stops_at_first_false::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_stops_at_first_false::{closure}<'_0>}::call_mut]:
-    Source: 'tests/src/iter_adapters.rs', lines 386:37-386:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 439:37-439:49 -/
 def
   test_take_while_stops_at_first_false.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
   (c : test_take_while_stops_at_first_false.closure) (tupled_args : Std.U32) :
@@ -1322,7 +1325,7 @@ def
   ok (tupled_args < 10#u32, ())
 
 /-- [iter_adapters::test_take_while_stops_at_first_false::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_stops_at_first_false::{closure}<'_0>}::call_once]:
-    Source: 'tests/src/iter_adapters.rs', lines 386:37-386:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 439:37-439:49 -/
 def
   test_take_while_stops_at_first_false.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool.call_once
   (c : test_take_while_stops_at_first_false.closure) (i : Std.U32) :
@@ -1334,7 +1337,7 @@ def
   ok b
 
 /-- Trait implementation: [iter_adapters::test_take_while_stops_at_first_false::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_stops_at_first_false::{closure}<'_0>}]
-    Source: 'tests/src/iter_adapters.rs', lines 386:37-386:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 439:37-439:49 -/
 @[reducible]
 def
   test_take_while_stops_at_first_false.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool
@@ -1345,7 +1348,7 @@ def
 }
 
 /-- Trait implementation: [iter_adapters::test_take_while_stops_at_first_false::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_stops_at_first_false::{closure}<'_0>}]
-    Source: 'tests/src/iter_adapters.rs', lines 386:37-386:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 439:37-439:49 -/
 @[reducible]
 def
   test_take_while_stops_at_first_false.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
@@ -1358,7 +1361,7 @@ def
 }
 
 /-- [iter_adapters::test_take_while_stops_at_first_false]:
-    Source: 'tests/src/iter_adapters.rs', lines 384:0-390:1
+    Source: 'tests/src/iter_adapters.rs', lines 437:0-443:1
     Visibility: public -/
 def test_take_while_stops_at_first_false : Result Unit := do
   let s ←
@@ -1395,12 +1398,12 @@ def test_take_while_stops_at_first_false : Result Unit := do
 #guard (test_take_while_stops_at_first_false).reducesTo ()
 
 /-- [iter_adapters::test_take_while_latches::{closure}]
-    Source: 'tests/src/iter_adapters.rs', lines 397:37-397:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 450:37-450:49 -/
 @[reducible]
 def test_take_while_latches.closure := Unit
 
 /-- [iter_adapters::test_take_while_latches::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_latches::{closure}<'_0>}::call_mut]:
-    Source: 'tests/src/iter_adapters.rs', lines 397:37-397:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 450:37-450:49 -/
 def
   test_take_while_latches.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
   (c : test_take_while_latches.closure) (tupled_args : Std.U32) :
@@ -1409,7 +1412,7 @@ def
   ok (tupled_args < 10#u32, ())
 
 /-- [iter_adapters::test_take_while_latches::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_latches::{closure}<'_0>}::call_once]:
-    Source: 'tests/src/iter_adapters.rs', lines 397:37-397:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 450:37-450:49 -/
 def
   test_take_while_latches.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool.call_once
   (c : test_take_while_latches.closure) (i : Std.U32) : Result Bool := do
@@ -1419,7 +1422,7 @@ def
   ok b
 
 /-- Trait implementation: [iter_adapters::test_take_while_latches::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_latches::{closure}<'_0>}]
-    Source: 'tests/src/iter_adapters.rs', lines 397:37-397:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 450:37-450:49 -/
 @[reducible]
 def
   test_take_while_latches.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool
@@ -1429,7 +1432,7 @@ def
 }
 
 /-- Trait implementation: [iter_adapters::test_take_while_latches::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_latches::{closure}<'_0>}]
-    Source: 'tests/src/iter_adapters.rs', lines 397:37-397:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 450:37-450:49 -/
 @[reducible]
 def
   test_take_while_latches.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
@@ -1441,7 +1444,7 @@ def
 }
 
 /-- [iter_adapters::test_take_while_latches]:
-    Source: 'tests/src/iter_adapters.rs', lines 395:0-400:1
+    Source: 'tests/src/iter_adapters.rs', lines 448:0-453:1
     Visibility: public -/
 def test_take_while_latches : Result Unit := do
   let s ← lift (Array.to_slice (Array.make 3#usize [ 30#u32, 1#u32, 2#u32 ]))
@@ -1470,12 +1473,12 @@ def test_take_while_latches : Result Unit := do
 #guard (test_take_while_latches).reducesTo ()
 
 /-- [iter_adapters::test_take_while_all_pass::{closure}]
-    Source: 'tests/src/iter_adapters.rs', lines 406:37-406:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 459:37-459:49 -/
 @[reducible]
 def test_take_while_all_pass.closure := Unit
 
 /-- [iter_adapters::test_take_while_all_pass::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_all_pass::{closure}<'_0>}::call_mut]:
-    Source: 'tests/src/iter_adapters.rs', lines 406:37-406:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 459:37-459:49 -/
 def
   test_take_while_all_pass.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
   (c : test_take_while_all_pass.closure) (tupled_args : Std.U32) :
@@ -1484,7 +1487,7 @@ def
   ok (tupled_args < 10#u32, ())
 
 /-- [iter_adapters::test_take_while_all_pass::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_all_pass::{closure}<'_0>}::call_once]:
-    Source: 'tests/src/iter_adapters.rs', lines 406:37-406:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 459:37-459:49 -/
 def
   test_take_while_all_pass.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool.call_once
   (c : test_take_while_all_pass.closure) (i : Std.U32) : Result Bool := do
@@ -1494,7 +1497,7 @@ def
   ok b
 
 /-- Trait implementation: [iter_adapters::test_take_while_all_pass::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_all_pass::{closure}<'_0>}]
-    Source: 'tests/src/iter_adapters.rs', lines 406:37-406:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 459:37-459:49 -/
 @[reducible]
 def
   test_take_while_all_pass.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool
@@ -1504,7 +1507,7 @@ def
 }
 
 /-- Trait implementation: [iter_adapters::test_take_while_all_pass::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_all_pass::{closure}<'_0>}]
-    Source: 'tests/src/iter_adapters.rs', lines 406:37-406:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 459:37-459:49 -/
 @[reducible]
 def
   test_take_while_all_pass.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
@@ -1516,7 +1519,7 @@ def
 }
 
 /-- [iter_adapters::test_take_while_all_pass]:
-    Source: 'tests/src/iter_adapters.rs', lines 404:0-411:1
+    Source: 'tests/src/iter_adapters.rs', lines 457:0-464:1
     Visibility: public -/
 def test_take_while_all_pass : Result Unit := do
   let s ← lift (Array.to_slice (Array.make 3#usize [ 1#u32, 2#u32, 3#u32 ]))
@@ -1559,12 +1562,12 @@ def test_take_while_all_pass : Result Unit := do
 #guard (test_take_while_all_pass).reducesTo ()
 
 /-- [iter_adapters::test_take_while_empty::{closure}]
-    Source: 'tests/src/iter_adapters.rs', lines 416:37-416:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 469:37-469:49 -/
 @[reducible]
 def test_take_while_empty.closure := Unit
 
 /-- [iter_adapters::test_take_while_empty::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_empty::{closure}<'_0>}::call_mut]:
-    Source: 'tests/src/iter_adapters.rs', lines 416:37-416:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 469:37-469:49 -/
 def
   test_take_while_empty.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
   (c : test_take_while_empty.closure) (tupled_args : Std.U32) :
@@ -1573,7 +1576,7 @@ def
   ok (tupled_args < 10#u32, ())
 
 /-- [iter_adapters::test_take_while_empty::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_empty::{closure}<'_0>}::call_once]:
-    Source: 'tests/src/iter_adapters.rs', lines 416:37-416:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 469:37-469:49 -/
 def
   test_take_while_empty.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool.call_once
   (c : test_take_while_empty.closure) (i : Std.U32) : Result Bool := do
@@ -1583,7 +1586,7 @@ def
   ok b
 
 /-- Trait implementation: [iter_adapters::test_take_while_empty::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_empty::{closure}<'_0>}]
-    Source: 'tests/src/iter_adapters.rs', lines 416:37-416:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 469:37-469:49 -/
 @[reducible]
 def
   test_take_while_empty.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool
@@ -1593,7 +1596,7 @@ def
 }
 
 /-- Trait implementation: [iter_adapters::test_take_while_empty::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_empty::{closure}<'_0>}]
-    Source: 'tests/src/iter_adapters.rs', lines 416:37-416:49 -/
+    Source: 'tests/src/iter_adapters.rs', lines 469:37-469:49 -/
 @[reducible]
 def
   test_take_while_empty.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
@@ -1605,7 +1608,7 @@ def
 }
 
 /-- [iter_adapters::test_take_while_empty]:
-    Source: 'tests/src/iter_adapters.rs', lines 414:0-418:1
+    Source: 'tests/src/iter_adapters.rs', lines 467:0-471:1
     Visibility: public -/
 def test_take_while_empty : Result Unit := do
   let s ← lift (Array.to_slice (Std.Array.empty Std.U32))
@@ -1626,142 +1629,150 @@ def test_take_while_empty : Result Unit := do
 /- Unit test for [iter_adapters::test_take_while_empty] -/
 #guard (test_take_while_empty).reducesTo ()
 
-/-- [iter_adapters::take_while_lt_ten::{closure}]
-    Source: 'tests/src/iter_adapters.rs', lines 422:37-422:49 -/
-@[reducible]
-def take_while_lt_ten.closure := Unit
+/-- [iter_adapters::first]:
+    Source: 'tests/src/iter_adapters.rs', lines 474:0-476:1 -/
+def first
+  {I : Type _} (coreitertraitsiteratorIteratorISharedAU32Inst :
+  core.iter.traits.iterator.Iterator I Std.U32) (it : I) :
+  Result (Option Std.U32)
+  := do
+  let (o, _) ← coreitertraitsiteratorIteratorISharedAU32Inst.next it
+  ok o
 
-/-- [iter_adapters::take_while_lt_ten::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::take_while_lt_ten::{closure}<'_0>}::call_mut]:
-    Source: 'tests/src/iter_adapters.rs', lines 422:37-422:49 -/
+/-- [iter_adapters::test_take_while_as_iterator::{closure#1}]
+    Source: 'tests/src/iter_adapters.rs', lines 484:38-484:50 -/
+@[reducible]
+def test_take_while_as_iterator.closure_1 := Unit
+
+/-- [iter_adapters::test_take_while_as_iterator::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_as_iterator::{closure#1}<'_0>}::call_mut]:
+    Source: 'tests/src/iter_adapters.rs', lines 484:38-484:50 -/
 def
-  take_while_lt_ten.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
-  (c : take_while_lt_ten.closure) (tupled_args : Std.U32) :
-  Result (Bool × take_while_lt_ten.closure)
+  test_take_while_as_iterator.closure_1.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
+  (c : test_take_while_as_iterator.closure_1) (tupled_args : Std.U32) :
+  Result (Bool × test_take_while_as_iterator.closure_1)
   := do
   ok (tupled_args < 10#u32, ())
 
-/-- [iter_adapters::take_while_lt_ten::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::take_while_lt_ten::{closure}<'_0>}::call_once]:
-    Source: 'tests/src/iter_adapters.rs', lines 422:37-422:49 -/
+/-- [iter_adapters::test_take_while_as_iterator::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_as_iterator::{closure#1}<'_0>}::call_once]:
+    Source: 'tests/src/iter_adapters.rs', lines 484:38-484:50 -/
 def
-  take_while_lt_ten.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool.call_once
-  (c : take_while_lt_ten.closure) (i : Std.U32) : Result Bool := do
+  test_take_while_as_iterator.closure_1.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool.call_once
+  (c : test_take_while_as_iterator.closure_1) (i : Std.U32) : Result Bool := do
   let (b, _) ←
-    take_while_lt_ten.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
+    test_take_while_as_iterator.closure_1.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
       () i
   ok b
 
-/-- Trait implementation: [iter_adapters::take_while_lt_ten::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::take_while_lt_ten::{closure}<'_0>}]
-    Source: 'tests/src/iter_adapters.rs', lines 422:37-422:49 -/
+/-- Trait implementation: [iter_adapters::test_take_while_as_iterator::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_as_iterator::{closure#1}<'_0>}]
+    Source: 'tests/src/iter_adapters.rs', lines 484:38-484:50 -/
 @[reducible]
 def
-  take_while_lt_ten.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool
-  : core.ops.function.FnOnce take_while_lt_ten.closure Std.U32 Bool := {
+  test_take_while_as_iterator.closure_1.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool
+  : core.ops.function.FnOnce test_take_while_as_iterator.closure_1 Std.U32 Bool
+  := {
   call_once :=
-    take_while_lt_ten.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool.call_once
+    test_take_while_as_iterator.closure_1.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool.call_once
 }
 
-/-- Trait implementation: [iter_adapters::take_while_lt_ten::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::take_while_lt_ten::{closure}<'_0>}]
-    Source: 'tests/src/iter_adapters.rs', lines 422:37-422:49 -/
+/-- Trait implementation: [iter_adapters::test_take_while_as_iterator::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_as_iterator::{closure#1}<'_0>}]
+    Source: 'tests/src/iter_adapters.rs', lines 484:38-484:50 -/
 @[reducible]
 def
-  take_while_lt_ten.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
-  : core.ops.function.FnMut take_while_lt_ten.closure Std.U32 Bool := {
+  test_take_while_as_iterator.closure_1.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
+  : core.ops.function.FnMut test_take_while_as_iterator.closure_1 Std.U32 Bool
+  := {
   FnOnceInst :=
-    take_while_lt_ten.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool
+    test_take_while_as_iterator.closure_1.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool
   call_mut :=
-    take_while_lt_ten.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
+    test_take_while_as_iterator.closure_1.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
 }
 
-/-- [iter_adapters::take_while_lt_ten]:
-    Source: 'tests/src/iter_adapters.rs', lines 421:0-424:1
-    Visibility: public -/
-def take_while_lt_ten (v : Slice Std.U32) : Result (Option Std.U32) := do
-  let i ← core.slice.Slice.iter v
-  let it ←
-    core.iter.traits.iterator.Iterator.take_while.trait_default
-      (core.iter.traits.iterator.IteratorSliceIter Std.U32)
-      take_while_lt_ten.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
-      i ()
-  let (o, _) ←
-    core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.next
-      (core.iter.traits.iterator.IteratorSliceIter Std.U32)
-      take_while_lt_ten.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
-      it
-  core.option.OptionShared0T.copied core.marker.CopyU32 o
-
-/-- [iter_adapters::take_while_twice::{closure}]
-    Source: 'tests/src/iter_adapters.rs', lines 428:37-428:49 -/
+/-- [iter_adapters::test_take_while_as_iterator::{closure}]
+    Source: 'tests/src/iter_adapters.rs', lines 482:39-482:51 -/
 @[reducible]
-def take_while_twice.closure := Unit
+def test_take_while_as_iterator.closure := Unit
 
-/-- [iter_adapters::take_while_twice::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::take_while_twice::{closure}<'_0>}::call_mut]:
-    Source: 'tests/src/iter_adapters.rs', lines 428:37-428:49 -/
+/-- [iter_adapters::test_take_while_as_iterator::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_as_iterator::{closure}<'_0>}::call_mut]:
+    Source: 'tests/src/iter_adapters.rs', lines 482:39-482:51 -/
 def
-  take_while_twice.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
-  (c : take_while_twice.closure) (tupled_args : Std.U32) :
-  Result (Bool × take_while_twice.closure)
+  test_take_while_as_iterator.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
+  (c : test_take_while_as_iterator.closure) (tupled_args : Std.U32) :
+  Result (Bool × test_take_while_as_iterator.closure)
   := do
   ok (tupled_args < 10#u32, ())
 
-/-- [iter_adapters::take_while_twice::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::take_while_twice::{closure}<'_0>}::call_once]:
-    Source: 'tests/src/iter_adapters.rs', lines 428:37-428:49 -/
+/-- [iter_adapters::test_take_while_as_iterator::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_as_iterator::{closure}<'_0>}::call_once]:
+    Source: 'tests/src/iter_adapters.rs', lines 482:39-482:51 -/
 def
-  take_while_twice.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool.call_once
-  (c : take_while_twice.closure) (i : Std.U32) : Result Bool := do
+  test_take_while_as_iterator.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool.call_once
+  (c : test_take_while_as_iterator.closure) (i : Std.U32) : Result Bool := do
   let (b, _) ←
-    take_while_twice.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
+    test_take_while_as_iterator.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
       () i
   ok b
 
-/-- Trait implementation: [iter_adapters::take_while_twice::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::take_while_twice::{closure}<'_0>}]
-    Source: 'tests/src/iter_adapters.rs', lines 428:37-428:49 -/
+/-- Trait implementation: [iter_adapters::test_take_while_as_iterator::{impl core::ops::function::FnOnce<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_as_iterator::{closure}<'_0>}]
+    Source: 'tests/src/iter_adapters.rs', lines 482:39-482:51 -/
 @[reducible]
 def
-  take_while_twice.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool
-  : core.ops.function.FnOnce take_while_twice.closure Std.U32 Bool := {
+  test_take_while_as_iterator.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool
+  : core.ops.function.FnOnce test_take_while_as_iterator.closure Std.U32 Bool
+  := {
   call_once :=
-    take_while_twice.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool.call_once
+    test_take_while_as_iterator.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool.call_once
 }
 
-/-- Trait implementation: [iter_adapters::take_while_twice::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::take_while_twice::{closure}<'_0>}]
-    Source: 'tests/src/iter_adapters.rs', lines 428:37-428:49 -/
+/-- Trait implementation: [iter_adapters::test_take_while_as_iterator::{impl core::ops::function::FnMut<(&'_1 &'_0 u32,), bool> for iter_adapters::test_take_while_as_iterator::{closure}<'_0>}]
+    Source: 'tests/src/iter_adapters.rs', lines 482:39-482:51 -/
 @[reducible]
 def
-  take_while_twice.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
-  : core.ops.function.FnMut take_while_twice.closure Std.U32 Bool := {
+  test_take_while_as_iterator.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
+  : core.ops.function.FnMut test_take_while_as_iterator.closure Std.U32 Bool
+  := {
   FnOnceInst :=
-    take_while_twice.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool
+    test_take_while_as_iterator.closure.Insts.CoreOpsFunctionFnOnceTupleShared1Shared0U32Bool
   call_mut :=
-    take_while_twice.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
+    test_take_while_as_iterator.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool.call_mut
 }
 
-/-- [iter_adapters::take_while_twice]:
-    Source: 'tests/src/iter_adapters.rs', lines 427:0-432:1
+/-- [iter_adapters::test_take_while_as_iterator]:
+    Source: 'tests/src/iter_adapters.rs', lines 480:0-485:1
     Visibility: public -/
-def take_while_twice
-  (v : Slice Std.U32) : Result ((Option Std.U32) × (Option Std.U32)) := do
-  let i ← core.slice.Slice.iter v
-  let it ←
+def test_take_while_as_iterator : Result Unit := do
+  let s ← lift (Array.to_slice (Array.make 3#usize [ 1#u32, 30#u32, 2#u32 ]))
+  let i ← core.slice.Slice.iter s
+  let tw ←
     core.iter.traits.iterator.Iterator.take_while.trait_default
       (core.iter.traits.iterator.IteratorSliceIter Std.U32)
-      take_while_twice.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
+      test_take_while_as_iterator.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
       i ()
-  let (o, it1) ←
-    core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.next
+  let o ←
+    first (core.iter.traits.iterator.IteratorTakeWhile
       (core.iter.traits.iterator.IteratorSliceIter Std.U32)
-      take_while_twice.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
-      it
-  let a ← core.option.OptionShared0T.copied core.marker.CopyU32 o
-  let (o1, _) ←
-    core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.next
+      test_take_while_as_iterator.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool)
+      tw
+  let i1 ← core.option.Option.unwrap o
+  massert (i1 = 1#u32)
+  let s1 ← lift (Array.to_slice (Array.make 2#usize [ 30#u32, 1#u32 ]))
+  let i2 ← core.slice.Slice.iter s1
+  let tw1 ←
+    core.iter.traits.iterator.Iterator.take_while.trait_default
       (core.iter.traits.iterator.IteratorSliceIter Std.U32)
-      take_while_twice.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
-      it1
-  let b ← core.option.OptionShared0T.copied core.marker.CopyU32 o1
-  ok (a, b)
+      test_take_while_as_iterator.closure_1.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool
+      i2 ()
+  let o1 ←
+    first (core.iter.traits.iterator.IteratorTakeWhile
+      (core.iter.traits.iterator.IteratorSliceIter Std.U32)
+      test_take_while_as_iterator.closure_1.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U32Bool)
+      tw1
+  let b := core.option.Option.is_none o1
+  massert b
+
+/- Unit test for [iter_adapters::test_take_while_as_iterator] -/
+#guard (test_take_while_as_iterator).reducesTo ()
 
 /-- [iter_adapters::test_rev_slice]:
-    Source: 'tests/src/iter_adapters.rs', lines 440:0-447:1
+    Source: 'tests/src/iter_adapters.rs', lines 493:0-500:1
     Visibility: public -/
 def test_rev_slice : Result Unit := do
   let s ← lift (Array.to_slice (Array.make 3#usize [ 1#u32, 2#u32, 3#u32 ]))
@@ -1834,7 +1845,7 @@ def test_rev_as_iterator : Result Unit := do
 #guard (test_rev_as_iterator).reducesTo ()
 
 /-- [iter_adapters::test_rev_empty_slice]:
-    Source: 'tests/src/iter_adapters.rs', lines 450:0-454:1
+    Source: 'tests/src/iter_adapters.rs', lines 512:0-516:1
     Visibility: public -/
 def test_rev_empty_slice : Result Unit := do
   let s ← lift (Array.to_slice (Std.Array.empty Std.U32))
