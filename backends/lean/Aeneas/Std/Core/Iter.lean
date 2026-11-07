@@ -89,6 +89,33 @@ def core.iter.traits.iterator.Iterator.take.default
   Result (core.iter.adapters.take.Take Self) :=
   .ok ⟨ self, n ⟩
 
+/-- One step of the default `Iterator::fold` body in
+    `library/core/src/iter/traits/iterator.rs`. Rust starts with `init`, repeatedly
+    calls `next`, applies `f` to the accumulator and each `Some` item, and returns
+    the accumulator after `None`. The model also threads the state of the `FnMut`
+    closure through each call. -/
+def core.iter.traits.iterator.Iterator.fold.default.body
+  {Self Item Acc F : Type _}
+  (next : Self → Result ((Option Item) × Self))
+  (FnMutInst : core.ops.function.FnMut F (Acc × Item) Acc) :
+  (Self × Acc × F) → Result (ControlFlow (Self × Acc × F) Acc)
+  | (self, acc, f) => do
+    let (opt, self1) ← next self
+    match opt with
+    | none => ok (.done acc)
+    | some item => do
+      let (acc1, f1) ← FnMutInst.call_mut f (acc, item)
+      ok (.cont (self1, acc1, f1))
+
+/-- Execute the default `fold` body. `loop` represents possible nontermination. -/
+def core.iter.traits.iterator.Iterator.fold.default.loop
+  {Self Item Acc F : Type _}
+  (next : Self → Result ((Option Item) × Self))
+  (FnMutInst : core.ops.function.FnMut F (Acc × Item) Acc)
+  (self : Self) (acc : Acc) (f : F) : Result Acc :=
+  Aeneas.Std.loop (core.iter.traits.iterator.Iterator.fold.default.body next FnMutInst)
+    (self, acc, f)
+
 @[rust_trait "core::iter::traits::iterator::Iterator"]
 structure core.iter.traits.iterator.Iterator (Self : Type _) (Self_Item : Type _)
   where
@@ -96,6 +123,10 @@ structure core.iter.traits.iterator.Iterator (Self : Type _) (Self_Item : Type _
   step_by : Self → Usize → Result (core.iter.adapters.step_by.StepBy Self) := core.iter.traits.iterator.Iterator.step_by.default
   enumerate : Self → Result (core.iter.adapters.enumerate.Enumerate Self) := core.iter.traits.iterator.Iterator.enumerate.default
   take : Self → Usize → Result (core.iter.adapters.take.Take Self) := core.iter.traits.iterator.Iterator.take.default
+  fold : ∀ {Acc F : Type}, core.ops.function.FnMut F (Acc × Self_Item) Acc →
+    Self → Acc → F → Result Acc :=
+      fun FnMutInst self acc f =>
+        core.iter.traits.iterator.Iterator.fold.default.loop next FnMutInst self acc f
   -- TODO: adding more fields like rev leads to a circularity.
   -- As an approximation we could only require these methods to implement a smaller version of
   -- `Iterator` with, e.g., only the `next` method. Most implementations should satisfy this
@@ -127,6 +158,75 @@ def core.iter.traits.iterator.Iterator.take.trait_default
   (self: Self) (n : Std.Usize) :
   Result (core.iter.adapters.take.Take Self) :=
   core.iter.traits.iterator.Iterator.take.default self n
+
+@[trait_default, rust_fun "core::iter::traits::iterator::Iterator::fold"]
+def core.iter.traits.iterator.Iterator.fold.trait_default
+  {Self Item Acc F : Type _}
+  (IterInst : core.iter.traits.iterator.Iterator Self Item)
+  (FnMutInst : core.ops.function.FnMut F (Acc × Item) Acc)
+  (self : Self) (init : Acc) (f : F) : Result Acc :=
+  core.iter.traits.iterator.Iterator.fold.default.loop IterInst.next FnMutInst self init f
+
+/-- One `fold` iteration, using postconditions for the iterator and closure calls. -/
+@[step]
+theorem core.iter.traits.iterator.Iterator.fold.default.body.spec
+    {Self Item Acc F : Type _}
+    (next : Self → Result ((Option Item) × Self))
+    (FnMutInst : core.ops.function.FnMut F (Acc × Item) Acc)
+    (self : Self) (acc : Acc) (f : F)
+    (nextPost : Option Item × Self → Prop)
+    (callPost : Item → Acc × F → Prop)
+    (hnext : next self ⦃ nextPost ⦄)
+    (hcall : ∀ x self1, nextPost (some x, self1) →
+      FnMutInst.call_mut f (acc, x) ⦃ callPost x ⦄) :
+    core.iter.traits.iterator.Iterator.fold.default.body next FnMutInst (self, acc, f)
+      ⦃ r => ∃ o self1, nextPost (o, self1) ∧
+        match o with
+        | none => r = .done acc
+        | some x => ∃ acc1 f1, callPost x (acc1, f1) ∧
+            r = .cont (self1, acc1, f1) ⦄ := by
+  unfold core.iter.traits.iterator.Iterator.fold.default.body
+  apply WP.spec_bind hnext
+  intro ⟨o, self1⟩ ho
+  cases o with
+  | none =>
+    simp [WP.spec_ok]
+    exact ⟨none, ⟨self1, ho⟩, trivial⟩
+  | some x =>
+    apply WP.spec_bind (hcall x self1 ho)
+    intro ⟨acc1, f1⟩ hcf
+    simp [WP.spec_ok]
+    exact ⟨some x, self1, ho, hcf, rfl⟩
+
+/-- To prove a result for the default `fold`, give a loop invariant, a decreasing
+    measure, and a `WP` spec for one iteration of the body. This works directly
+    with `@[step]` specs for `next` and `FnMut.call_mut`. -/
+theorem core.iter.traits.iterator.Iterator.fold.trait_default.spec_decr_nat
+    {Self Item Acc F : Type _}
+    (IterInst : core.iter.traits.iterator.Iterator Self Item)
+    (FnMutInst : core.ops.function.FnMut F (Acc × Item) Acc)
+    (self : Self) (init : Acc) (f : F)
+    (measure : Self × Acc × F → Nat)
+    (inv : Self × Acc × F → Prop)
+    (post : Acc → Prop)
+    (hBody : ∀ s, inv s →
+      core.iter.traits.iterator.Iterator.fold.default.body IterInst.next FnMutInst s
+        ⦃ r => match r with
+          | .done y => post y
+          | .cont s1 => inv s1 ∧ measure s1 < measure s ⦄)
+    (hInit : inv (self, init, f)) :
+    core.iter.traits.iterator.Iterator.fold.trait_default IterInst FnMutInst self init f
+      ⦃ post ⦄ := by
+  unfold core.iter.traits.iterator.Iterator.fold.trait_default
+    core.iter.traits.iterator.Iterator.fold.default.loop
+  apply Aeneas.Std.loop.spec_decr_nat measure inv post
+    (core.iter.traits.iterator.Iterator.fold.default.body IterInst.next FnMutInst)
+    (self, init, f)
+  · intro s hs
+    apply WP.spec_mono (hBody s hs)
+    intro r hr
+    cases r <;> exact hr
+  · exact hInit
 
 /-- Skip up to `n` elements from an iterator -/
 def core.iter.adapters.step_by.skipN
@@ -226,6 +326,18 @@ structure core.iter.traits.collect.Extend (Self : Type _) (A : Type _) where
 structure core.iter.traits.double_ended.DoubleEndedIterator (Self : Type _) (Item : Type _) where
   iteratorInst : core.iter.traits.iterator.Iterator Self Item
   next_back : Self → Result ((Option Item) × Self)
+  rfold : ∀ {Acc F : Type}, core.ops.function.FnMut F (Acc × Item) Acc →
+    Self → Acc → F → Result Acc :=
+      fun FnMutInst self acc f =>
+        core.iter.traits.iterator.Iterator.fold.default.loop next_back FnMutInst self acc f
+
+@[trait_default, rust_fun "core::iter::traits::double_ended::DoubleEndedIterator::rfold"]
+def core.iter.traits.double_ended.DoubleEndedIterator.rfold.trait_default
+  {Self Item Acc F : Type _}
+  (DEInst : core.iter.traits.double_ended.DoubleEndedIterator Self Item)
+  (FnMutInst : core.ops.function.FnMut F (Acc × Item) Acc)
+  (self : Self) (init : Acc) (f : F) : Result Acc :=
+  core.iter.traits.iterator.Iterator.fold.default.loop DEInst.next_back FnMutInst self init f
 
 @[rust_trait "core::iter::traits::exact_size::ExactSizeIterator"
   (parentClauses := ["iteratorInst"])]
@@ -722,116 +834,37 @@ def core.iter.traits.iterator.Iterator.zip.trait_default
   Self → U → Result (core.iter.adapters.zip.Zip Self IntoIter) :=
   core.iter.traits.iterator.Iterator.zip.default IntoIterInst.into_iter
 
-/-- The loop of `Iterator::count`'s default body.
-
-The standard library defines `count` as a fold (`library/core/src/iter/traits/iterator.rs`):
-```rust
-fn count(self) -> usize {
-    self.fold(0, #[rustc_inherit_overflow_checks] |accum, _elem| accum + 1)
+/-- The closure passed to `fold` by Rust's default `Iterator::count` implementation.
+    The increment is checked, as in `library/core/src/iter/traits/iterator.rs`. -/
+def core.iter.traits.iterator.Iterator.count.stepFnMut (Item : Type _) :
+    core.ops.function.FnMut Unit (Usize × Item) Usize := {
+  FnOnceInst := { call_once := fun _ (acc, _) => acc + 1#usize }
+  call_mut := fun _ (acc, _) => do
+    let acc1 ← acc + 1#usize
+    ok (acc1, ())
 }
-```
-and `fold`'s default body is the loop
-```rust
-let mut accum = init;
-while let Some(x) = self.next() {
-    accum = f(accum, x);
-}
-accum
-```
-This is that loop with `f` inlined: `accum` is the count so far, incremented as each element
-arrives. The increment is checked, as `#[rustc_inherit_overflow_checks]` makes it when overflow
-checks are on, so the model fails at the same element Rust panics at.
 
-Defined by `partial_fixpoint` because there is no decreasing measure on a general `Self`: as in
-Rust, the loop need not terminate, and on an infinite iterator whose count never overflows the
-value is `Result.div`. `alloc.vec.FromIteratorVec.iterToList` is defined the same way. -/
-def core.iter.traits.iterator.Iterator.count.default.loop
-  {Self Item : Type _}
-  (IterInst : core.iter.traits.iterator.Iterator Self Item) (accum : Std.Usize) :
-  Self → Result Std.Usize :=
-  fun self => do
-    let (o, self1) ← IterInst.next self
-    match o with
-    | none => ok accum
-    | some _ => do
-      let accum1 ← accum + 1#usize
-      core.iter.traits.iterator.Iterator.count.default.loop IterInst accum1 self1
-partial_fixpoint
+/-- The count closure increments the accumulator, provided that it fits in `usize`. -/
+@[step]
+theorem core.iter.traits.iterator.Iterator.count.stepFnMut.spec
+    {Item : Type _} (acc : Usize) (x : Item) (hmax : acc.val + 1 ≤ Usize.max) :
+    (core.iter.traits.iterator.Iterator.count.stepFnMut Item).call_mut () (acc, x)
+      ⦃ r => r.1.val = acc.val + 1 ∧ r.2 = () ⦄ := by
+  unfold core.iter.traits.iterator.Iterator.count.stepFnMut
+  apply WP.spec_bind (Usize.add_spec (x := acc) (y := 1#usize) hmax)
+  intro acc1 hacc
+  simp [WP.spec_ok]
+  simp at hacc
+  omega
 
-/-- `Iterator::count` default body: `fold` from `0`. See `count.default.loop`. -/
+/-- Rust's default `count` calls `self.fold(0, |acc, _| acc + 1)`.
+    Dispatching through `IterInst.fold` also respects specialised `fold` methods. -/
 def core.iter.traits.iterator.Iterator.count.default
   {Self Item : Type _}
   (IterInst : core.iter.traits.iterator.Iterator Self Item) :
   Self → Result Std.Usize :=
-  core.iter.traits.iterator.Iterator.count.default.loop IterInst 0#usize
-
-/-- An exhausted iterator returns the count so far. -/
-@[simp]
-theorem core.iter.traits.iterator.Iterator.count.default.loop_none
-    {Self Item : Type _} (IterInst : core.iter.traits.iterator.Iterator Self Item)
-    (accum : Std.Usize) (self self1 : Self) (h : IterInst.next self = ok (none, self1)) :
-    core.iter.traits.iterator.Iterator.count.default.loop IterInst accum self = ok accum := by
-  rw [core.iter.traits.iterator.Iterator.count.default.loop.eq_def, h]
-  simp
-
-/-- One more element increments the count, failing if that overflows, then continues. -/
-theorem core.iter.traits.iterator.Iterator.count.default.loop_some
-    {Self Item : Type _} (IterInst : core.iter.traits.iterator.Iterator Self Item)
-    (accum : Std.Usize) (self self1 : Self) (x : Item)
-    (h : IterInst.next self = ok (some x, self1)) :
-    core.iter.traits.iterator.Iterator.count.default.loop IterInst accum self
-      = (do let accum1 ← accum + 1#usize
-            core.iter.traits.iterator.Iterator.count.default.loop IterInst accum1 self1) := by
-  rw [core.iter.traits.iterator.Iterator.count.default.loop.eq_def, h]
-  simp
-
-/-- `Yields IterInst self xs`: calling `next` repeatedly, starting from `self`, returns the
-    elements of `xs` in order and then `none`. -/
-inductive core.iter.traits.iterator.Iterator.Yields {Self Item : Type _}
-    (IterInst : core.iter.traits.iterator.Iterator Self Item) : Self → List Item → Prop
-  | nil (self self1 : Self) :
-    IterInst.next self = ok (none, self1) →
-    core.iter.traits.iterator.Iterator.Yields IterInst self []
-  | cons (self self1 : Self) (x : Item) (xs : List Item) :
-    IterInst.next self = ok (some x, self1) →
-    core.iter.traits.iterator.Iterator.Yields IterInst self1 xs →
-    core.iter.traits.iterator.Iterator.Yields IterInst self (x :: xs)
-
-/-- Counting an iterator that yields `xs` from `accum` gives `accum + xs.length`, provided that
-    fits in a `usize`. -/
-theorem core.iter.traits.iterator.Iterator.count.default.loop.spec
-    {Self Item : Type _} (IterInst : core.iter.traits.iterator.Iterator Self Item)
-    (accum : Std.Usize) (self : Self) (xs : List Item)
-    (h : core.iter.traits.iterator.Iterator.Yields IterInst self xs)
-    (hmax : accum.val + xs.length ≤ Usize.max) :
-    core.iter.traits.iterator.Iterator.count.default.loop IterInst accum self
-    ⦃ n => n.val = accum.val + xs.length ⦄ := by
-  induction h generalizing accum with
-  | nil self self1 hn =>
-    rw [core.iter.traits.iterator.Iterator.count.default.loop_none IterInst accum self self1 hn]
-    simp [WP.spec_ok]
-  | cons self self1 x xs hn _ ih =>
-    rw [core.iter.traits.iterator.Iterator.count.default.loop_some IterInst accum self self1 x hn]
-    simp only [List.length_cons] at hmax ⊢
-    apply WP.spec_bind (Usize.add_spec (x := accum) (y := 1#usize) (by scalar_tac))
-    intro accum1 h1
-    apply WP.spec_mono (ih accum1 (by scalar_tac))
-    intro r hr
-    scalar_tac
-
-/-- An iterator that yields `xs` counts `xs.length`, provided that fits in a `usize`. -/
-@[step]
-theorem core.iter.traits.iterator.Iterator.count.default.spec
-    {Self Item : Type _} (IterInst : core.iter.traits.iterator.Iterator Self Item)
-    (self : Self) (xs : List Item)
-    (h : core.iter.traits.iterator.Iterator.Yields IterInst self xs)
-    (hmax : xs.length ≤ Usize.max) :
-    core.iter.traits.iterator.Iterator.count.default IterInst self
-    ⦃ n => n.val = xs.length ⦄ := by
-  unfold core.iter.traits.iterator.Iterator.count.default
-  apply WP.spec_mono (core.iter.traits.iterator.Iterator.count.default.loop.spec IterInst 0#usize self xs h (by scalar_tac))
-  intro r hr
-  scalar_tac
+  fun self => IterInst.fold (core.iter.traits.iterator.Iterator.count.stepFnMut Item)
+    self 0#usize ()
 
 @[trait_default, rust_fun "core::iter::traits::iterator::Iterator::count"]
 def core.iter.traits.iterator.Iterator.count.trait_default
@@ -1005,6 +1038,63 @@ def core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator
         if b then ok (some x, ⟨it, false, p⟩)
         else ok (none, ⟨it, true, p⟩)
 
+/-- A `TakeWhile` step over any iterator. The predicate postcondition describes its
+    returned boolean and updated state. It is required only for items allowed by
+    `nextPost`; the inner iterator may be a slice iterator, a reversed iterator, or
+    another `Iterator` implementation. -/
+@[step]
+theorem core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.next.spec
+    {I P Item : Type _}
+    (IterInst : core.iter.traits.iterator.Iterator I Item)
+    (PredInst : core.ops.function.FnMut P Item Bool)
+    (tw : core.iter.adapters.take_while.TakeWhile I P)
+    (nextPost : Option Item × I → Prop)
+    (predPost : Item → Bool × P → Prop)
+    (hnext : ¬tw.flag → IterInst.next tw.iter ⦃ nextPost ⦄)
+    (hpred : ¬tw.flag → ∀ x it, nextPost (some x, it) →
+      PredInst.call_mut tw.predicate x ⦃ predPost x ⦄) :
+    core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.next
+      IterInst PredInst tw
+    ⦃ r => if tw.flag then r = (none, tw)
+           else ∃ o it, nextPost (o, it) ∧
+             match o with
+             | none => r = (none, ⟨it, false, tw.predicate⟩)
+             | some x => ∃ b p, predPost x (b, p) ∧
+                 r = (if b then some x else none, ⟨it, !b, p⟩) ⦄ := by
+  by_cases hf : tw.flag
+  · simp [core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.next,
+      hf, WP.spec_ok]
+  · simp only [core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.next,
+      hf, Bool.false_eq_true, ↓reduceIte]
+    apply WP.spec_bind (hnext hf)
+    intro ⟨o, it⟩ ho
+    cases o with
+    | none =>
+      simp [uncurry, WP.spec_ok]
+      exact ⟨none, it, ho, rfl⟩
+    | some x =>
+      apply WP.spec_bind (hpred hf x it ho)
+      intro ⟨b, p⟩ hbp
+      cases b
+      · simp [uncurry, WP.spec_ok]
+        exact ⟨some x, it, ho, hbp, rfl⟩
+      · simp [uncurry, WP.spec_ok]
+        exact ⟨some x, it, ho, hbp, rfl, rfl⟩
+
+/-- Behavioural model of `TakeWhile::fold`. Rust implements it through `try_fold`;
+    the observable accumulator follows the items returned by `TakeWhile::next`. -/
+@[rust_fun
+  "core::iter::adapters::take_while::{core::iter::traits::iterator::Iterator<core::iter::adapters::take_while::TakeWhile<@I, @P>, @Clause0_Item>}::fold"]
+def core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.fold
+  {I P Acc F Item : Type _}
+  (IterInst : core.iter.traits.iterator.Iterator I Item)
+  (PredInst : core.ops.function.FnMut P Item Bool)
+  (FnMutInst : core.ops.function.FnMut F (Acc × Item) Acc)
+  (self : core.iter.adapters.take_while.TakeWhile I P) (init : Acc) (f : F) : Result Acc :=
+  core.iter.traits.iterator.Iterator.fold.default.loop
+    (core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.next
+      IterInst PredInst) FnMutInst self init f
+
 @[reducible, rust_trait_impl
   "core::iter::traits::iterator::Iterator<core::iter::adapters::take_while::TakeWhile<@I, @P>, @Clause0_Item>"]
 impl_def core.iter.traits.iterator.IteratorTakeWhile {I P Item : Type _}
@@ -1013,12 +1103,8 @@ impl_def core.iter.traits.iterator.IteratorTakeWhile {I P Item : Type _}
     core.iter.traits.iterator.Iterator (core.iter.adapters.take_while.TakeWhile I P) Item := {
   next := core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.next
     IterInst PredInst
-  step_by := core.iter.traits.iterator.Iterator.step_by.trait_default
-    (core.iter.traits.iterator.IteratorTakeWhile IterInst PredInst)
-  enumerate := core.iter.traits.iterator.Iterator.enumerate.trait_default
-    (core.iter.traits.iterator.IteratorTakeWhile IterInst PredInst)
-  take := core.iter.traits.iterator.Iterator.take.trait_default
-    (core.iter.traits.iterator.IteratorTakeWhile IterInst PredInst)
+  fold := core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.fold
+    IterInst PredInst
 }
 
 /-- `Iterator::next` on `Rev<I>`: delegates to the inner `next_back`. -/
@@ -1033,18 +1119,23 @@ def core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator.next
     let (o, it) ← DEInst.next_back self.iter
     ok (o, ⟨it⟩)
 
+/-- `Rev::fold` delegates to the inner iterator's `rfold`, including any override. -/
+@[rust_fun
+  "core::iter::adapters::rev::{core::iter::traits::iterator::Iterator<core::iter::adapters::rev::Rev<@I>, @Clause0_Clause0_Item>}::fold"]
+def core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator.fold
+  {I Acc F Item : Type _}
+  (DEInst : core.iter.traits.double_ended.DoubleEndedIterator I Item)
+  (FnMutInst : core.ops.function.FnMut F (Acc × Item) Acc)
+  (self : core.iter.adapters.rev.Rev I) (init : Acc) (f : F) : Result Acc :=
+  DEInst.rfold FnMutInst self.iter init f
+
 @[reducible, rust_trait_impl
   "core::iter::traits::iterator::Iterator<core::iter::adapters::rev::Rev<@I>, @Clause0_Clause0_Item>"]
 impl_def core.iter.traits.iterator.IteratorRev {I Item : Type _}
     (DEInst : core.iter.traits.double_ended.DoubleEndedIterator I Item) :
     core.iter.traits.iterator.Iterator (core.iter.adapters.rev.Rev I) Item := {
   next := core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator.next DEInst
-  step_by := core.iter.traits.iterator.Iterator.step_by.trait_default
-    (core.iter.traits.iterator.IteratorRev DEInst)
-  enumerate := core.iter.traits.iterator.Iterator.enumerate.trait_default
-    (core.iter.traits.iterator.IteratorRev DEInst)
-  take := core.iter.traits.iterator.Iterator.take.trait_default
-    (core.iter.traits.iterator.IteratorRev DEInst)
+  fold := core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator.fold DEInst
 }
 
 /-- `Range<A>::next_back` (`DoubleEndedIterator`): if `start < end`, decrement
@@ -1106,3 +1197,86 @@ def core.ops.range.RangeInclusive.Insts.CoreIterTraitsDoubleEndedIterator.next_b
 structure core.iter.adapters.map.Map (I : Type u) (F : Type v) where
   iter : I
   f : F
+
+/-- A `fold` model that consumes items through `next` can use a loop invariant,
+    a decreasing measure, and a `WP` spec for one iteration of the body. -/
+theorem core.iter.traits.iterator.Iterator.fold.default.loop.spec_decr_nat
+    {Self Item Acc F : Type _}
+    (next : Self → Result ((Option Item) × Self))
+    (FnMutInst : core.ops.function.FnMut F (Acc × Item) Acc)
+    (self : Self) (init : Acc) (f : F)
+    (measure : Self × Acc × F → Nat)
+    (inv : Self × Acc × F → Prop)
+    (post : Acc → Prop)
+    (hBody : ∀ s, inv s →
+      core.iter.traits.iterator.Iterator.fold.default.body next FnMutInst s
+        ⦃ r => match r with
+          | .done y => post y
+          | .cont s1 => inv s1 ∧ measure s1 < measure s ⦄)
+    (hInit : inv (self, init, f)) :
+    core.iter.traits.iterator.Iterator.fold.default.loop next FnMutInst self init f
+      ⦃ post ⦄ := by
+  unfold core.iter.traits.iterator.Iterator.fold.default.loop
+  apply Aeneas.Std.loop.spec_decr_nat measure inv post
+    (core.iter.traits.iterator.Iterator.fold.default.body next FnMutInst)
+    (self, init, f)
+  · intro s hs
+    apply WP.spec_mono (hBody s hs)
+    intro r hr
+    cases r <;> exact hr
+  · exact hInit
+
+/-- The `TakeWhile.fold` loop rule combines with `TakeWhile.next.spec` to
+    establish the predicate state and stopping condition at each step. -/
+theorem core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.fold.spec_decr_nat
+    {I P Acc F Item : Type _}
+    (IterInst : core.iter.traits.iterator.Iterator I Item)
+    (PredInst : core.ops.function.FnMut P Item Bool)
+    (FnMutInst : core.ops.function.FnMut F (Acc × Item) Acc)
+    (self : core.iter.adapters.take_while.TakeWhile I P) (init : Acc) (f : F)
+    (measure : core.iter.adapters.take_while.TakeWhile I P × Acc × F → Nat)
+    (inv : core.iter.adapters.take_while.TakeWhile I P × Acc × F → Prop)
+    (post : Acc → Prop)
+    (hBody : ∀ s, inv s →
+      core.iter.traits.iterator.Iterator.fold.default.body
+        (core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.next
+          IterInst PredInst) FnMutInst s
+        ⦃ r => match r with
+          | .done y => post y
+          | .cont s1 => inv s1 ∧ measure s1 < measure s ⦄)
+    (hInit : inv (self, init, f)) :
+    core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.fold
+      IterInst PredInst FnMutInst self init f ⦃ post ⦄ := by
+  unfold core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.fold
+    core.iter.traits.iterator.Iterator.fold.default.loop
+  apply Aeneas.Std.loop.spec_decr_nat measure inv post
+    (core.iter.traits.iterator.Iterator.fold.default.body
+      (core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.next
+        IterInst PredInst) FnMutInst) (self, init, f)
+  · intro s hs
+    apply WP.spec_mono (hBody s hs)
+    intro r hr
+    cases r <;> exact hr
+  · exact hInit
+
+/-- Prove a result for the default `rfold` using a decreasing measure and a
+    specification for each `next_back` and closure call. -/
+theorem core.iter.traits.double_ended.DoubleEndedIterator.rfold.trait_default.spec_decr_nat
+    {Self Item Acc F : Type _}
+    (DEInst : core.iter.traits.double_ended.DoubleEndedIterator Self Item)
+    (FnMutInst : core.ops.function.FnMut F (Acc × Item) Acc)
+    (self : Self) (init : Acc) (f : F)
+    (measure : Self × Acc × F → Nat)
+    (inv : Self × Acc × F → Prop)
+    (post : Acc → Prop)
+    (hBody : ∀ s, inv s →
+      core.iter.traits.iterator.Iterator.fold.default.body DEInst.next_back FnMutInst s
+        ⦃ r => match r with
+          | .done y => post y
+          | .cont s1 => inv s1 ∧ measure s1 < measure s ⦄)
+    (hInit : inv (self, init, f)) :
+    core.iter.traits.double_ended.DoubleEndedIterator.rfold.trait_default
+      DEInst FnMutInst self init f ⦃ post ⦄ := by
+  unfold core.iter.traits.double_ended.DoubleEndedIterator.rfold.trait_default
+  exact core.iter.traits.iterator.Iterator.fold.default.loop.spec_decr_nat
+    DEInst.next_back FnMutInst self init f measure inv post hBody hInit
