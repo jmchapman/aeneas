@@ -73,16 +73,18 @@ def core.slice.iter.IteratorSliceIter.next
     ok (some x, it)
   else ok (none, it)
 
-/-- A slice iterator advances its index by one while elements remain. -/
+/-- A slice iterator returns the element at its current index and advances by one
+    while elements remain. -/
 @[step]
 theorem core.slice.iter.IteratorSliceIter.next.spec
     {T : Type _} (it : core.slice.iter.Iter T) :
     core.slice.iter.IteratorSliceIter.next it
-      ⦃ r => if it.i < it.slice.val.length
-        then ∃ x, r = (some x, { it with i := it.i + 1 })
+      ⦃ r => if h : it.i < it.slice.val.length
+        then r = (some (it.slice.val[it.i]'h), { it with i := it.i + 1 })
         else r = (none, it) ⦄ := by
   by_cases h : it.i < it.slice.val.length
   · simp [core.slice.iter.IteratorSliceIter.next, h, WP.spec_ok]
+    exact Slice.getElem_Nat_eq it.slice it.i h
   · simp [core.slice.iter.IteratorSliceIter.next, h, WP.spec_ok]
 
 /-- Behavioural model of the optimised slice-iterator `fold`. It visits the
@@ -164,13 +166,13 @@ theorem core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.count.
 impl_def core.iter.traits.iterator.IteratorSliceIter (T : Type _) :
   core.iter.traits.iterator.Iterator (core.slice.iter.Iter T) T := {
   next := core.slice.iter.IteratorSliceIter.next
+  fold := core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.fold
   step_by := core.iter.traits.iterator.Iterator.step_by.trait_default
     (core.iter.traits.iterator.IteratorSliceIter T)
   enumerate := core.iter.traits.iterator.Iterator.enumerate.trait_default
     (core.iter.traits.iterator.IteratorSliceIter T)
   take := core.iter.traits.iterator.Iterator.take.trait_default
     (core.iter.traits.iterator.IteratorSliceIter T)
-  fold := core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.fold
 }
 
 /-- The default `count` agrees with the specialised slice count. This proof uses the
@@ -201,7 +203,13 @@ theorem core.slice.iter.IteratorSliceIter.count_default_spec
       then ∃ x, r = (some x, { it1 with i := it1.i + 1 })
       else r = (none, it1)
     have hn : (core.iter.traits.iterator.IteratorSliceIter T).next it1
-        ⦃ postNext ⦄ := core.slice.iter.IteratorSliceIter.next.spec it1
+        ⦃ postNext ⦄ := by
+      apply WP.spec_mono (core.slice.iter.IteratorSliceIter.next.spec it1)
+      intro r hr
+      by_cases hi : it1.i < it1.slice.val.length
+      · simp [postNext, hi] at hr ⊢
+        exact ⟨_, hr⟩
+      · simpa [postNext, hi] using hr
     have hc : ∀ x it2, postNext (some x, it2) →
         (core.iter.traits.iterator.Iterator.count.stepFnMut T).call_mut () (acc, x)
           ⦃ r => r.1.val = acc.val + 1 ∧ r.2 = () ⦄ := by

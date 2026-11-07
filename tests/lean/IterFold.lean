@@ -20,47 +20,6 @@ set_option maxRecDepth 2048
 
 namespace iter_fold
 
-/-- Trait implementation: [core::iter::adapters::rev::{impl core::iter::traits::iterator::Iterator<Clause0_Clause0_Item> for core::iter::adapters::rev::Rev<I>}]
-    Source: '/rustc/library/core/src/iter/adapters/rev.rs', lines 45:0-47:27
-    Name pattern: [core::iter::traits::iterator::Iterator<core::iter::adapters::rev::Rev<@I>, @Clause0_Clause0_Item>] -/
-@[reducible, rust_trait_impl
-  "core::iter::traits::iterator::Iterator<core::iter::adapters::rev::Rev<@I>, @Clause0_Clause0_Item>"]
-impl_def core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator {I :
-  Type _} {Clause0_Clause0_Item : Type _}
-  (traitsdouble_endedDoubleEndedIteratorInst :
-  core.iter.traits.double_ended.DoubleEndedIterator I Clause0_Clause0_Item) :
-  core.iter.traits.iterator.Iterator (core.iter.adapters.rev.Rev I)
-  Clause0_Clause0_Item := {
-  next := core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator.next
-    traitsdouble_endedDoubleEndedIteratorInst
-  fold := fun {B : Type} {F : Type} (opsfunctionFnMutPPairPInst :
-    core.ops.function.FnMut F (B × Clause0_Clause0_Item) B) =>
-    core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator.fold
-    traitsdouble_endedDoubleEndedIteratorInst opsfunctionFnMutPPairPInst
-}
-
-/-- Trait implementation: [core::iter::adapters::take_while::{impl core::iter::traits::iterator::Iterator<Clause0_Item> for core::iter::adapters::take_while::TakeWhile<I, P>}]
-    Source: '/rustc/library/core/src/iter/adapters/take_while.rs', lines 37:0-39:31
-    Name pattern: [core::iter::traits::iterator::Iterator<core::iter::adapters::take_while::TakeWhile<@I, @P>, @Clause0_Item>] -/
-@[reducible, rust_trait_impl
-  "core::iter::traits::iterator::Iterator<core::iter::adapters::take_while::TakeWhile<@I, @P>, @Clause0_Item>"]
-impl_def
-  core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator
-  {I : Type _} {P : Type _} {Clause0_Item : Type _} (traitsiteratorIteratorInst
-  : core.iter.traits.iterator.Iterator I Clause0_Item)
-  (opsfunctionFnMutPTupleSharedClause0_ItemBoolInst : core.ops.function.FnMut P
-  Clause0_Item Bool) : core.iter.traits.iterator.Iterator
-  (core.iter.adapters.take_while.TakeWhile I P) Clause0_Item := {
-  next :=
-    core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.next
-    traitsiteratorIteratorInst opsfunctionFnMutPTupleSharedClause0_ItemBoolInst
-  fold := fun {B : Type} {F : Type} (opsfunctionFnMutPPairPInst :
-    core.ops.function.FnMut F (B × Clause0_Item) B) =>
-    core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator.fold
-    traitsiteratorIteratorInst opsfunctionFnMutPTupleSharedClause0_ItemBoolInst
-    opsfunctionFnMutPPairPInst
-}
-
 /-- Trait implementation: [core::slice::iter::{impl core::iter::traits::double_ended::DoubleEndedIterator<&'_ T> for core::slice::iter::Iter<'a, T>}]
     Source: '/rustc/library/core/src/slice/iter/macros.rs', lines 431:8-431:56; this code is generated from a macro invocation at: '/rustc/library/core/src/slice/iter.rs', lines 140:0-148:2
     Name pattern: [core::iter::traits::double_ended::DoubleEndedIterator<core::slice::iter::Iter<'a, @T>, &'_ @T>] -/
@@ -667,15 +626,15 @@ def count_rev_take_while : Result Unit := do
       Std.U8) i
   let tw ←
     core.iter.traits.iterator.Iterator.take_while.trait_default
-      (core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator
+      (core.iter.traits.iterator.IteratorRev
       (core.slice.iter.Iter.Insts.CoreIterTraitsDouble_endedDoubleEndedIteratorSharedT
       Std.U8))
       count_rev_take_while.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U8Bool
       r ()
   let count ←
     core.iter.traits.iterator.Iterator.count.trait_default
-      (core.iter.adapters.take_while.TakeWhile.Insts.CoreIterTraitsIteratorIterator
-      (core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator
+      (core.iter.traits.iterator.IteratorTakeWhile
+      (core.iter.traits.iterator.IteratorRev
       (core.slice.iter.Iter.Insts.CoreIterTraitsDouble_endedDoubleEndedIteratorSharedT
       Std.U8))
       count_rev_take_while.closure.Insts.CoreOpsFunctionFnMutTupleShared1Shared0U8Bool)
