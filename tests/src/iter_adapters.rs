@@ -65,6 +65,31 @@ pub fn test_take_more_than_available() {
 }
 
 // ============================================================================
+// Count
+// ============================================================================
+
+/// `count` on a slice iterator: Rust specialises this to the number remaining.
+#[verify::test]
+pub fn test_count_slice() {
+    let v: [u32; 3] = [1, 2, 3];
+    assert!(v.iter().count() == 3);
+}
+
+#[verify::test]
+pub fn test_count_empty_slice() {
+    let v: [u32; 0] = [];
+    assert!(v.iter().count() == 0);
+}
+
+/// `StepBy` does not specialise `count`, so this goes through `Iterator::count`'s
+/// default body, which drains the iterator.
+#[verify::test]
+pub fn test_count_step_by() {
+    let v: [u32; 5] = [1, 2, 3, 4, 5];
+    assert!(v.iter().step_by(2).count() == 3);
+}
+
+// ============================================================================
 // Range iteration over various scalar types
 // ============================================================================
 
