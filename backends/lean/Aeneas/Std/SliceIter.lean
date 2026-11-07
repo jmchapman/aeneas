@@ -85,6 +85,17 @@ theorem core.slice.iter.IteratorSliceIter.next.spec
   · simp [core.slice.iter.IteratorSliceIter.next, h, WP.spec_ok]
   · simp [core.slice.iter.IteratorSliceIter.next, h, WP.spec_ok]
 
+/-- Behavioural model of the optimised slice-iterator `fold`. It visits the
+    remaining elements in the same order as repeated `next` calls. -/
+@[rust_fun
+  "core::slice::iter::{core::iter::traits::iterator::Iterator<core::slice::iter::Iter<'a, @T>, &'a @T>}::fold"]
+def core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.fold
+    {T Acc F : Type _}
+    (FnMutInst : core.ops.function.FnMut F (Acc × T) Acc)
+    (it : core.slice.iter.Iter T) (init : Acc) (f : F) : Result Acc :=
+  core.iter.traits.iterator.Iterator.fold.default.loop
+    core.slice.iter.IteratorSliceIter.next FnMutInst it init f
+
 /-- `DoubleEndedIterator::next_back` on `slice::Iter`.
 
 The standard library generates this impl with the `iterator!` macro
@@ -159,6 +170,7 @@ impl_def core.iter.traits.iterator.IteratorSliceIter (T : Type _) :
     (core.iter.traits.iterator.IteratorSliceIter T)
   take := core.iter.traits.iterator.Iterator.take.trait_default
     (core.iter.traits.iterator.IteratorSliceIter T)
+  fold := core.slice.iter.Iter.Insts.CoreIterTraitsIteratorIteratorSharedAT.fold
 }
 
 /-- The default `count` agrees with the specialised slice count. This proof uses the
